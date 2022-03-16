@@ -1,0 +1,94 @@
+{
+  "workflow_description": {
+    "name":"chipseq_analysis",
+    "version": 1.0,
+    "label":"ChIP-seq peak calling",
+    "type":"chipseq_analysis",
+    "inputs":[
+      "mapped/*"
+    ],
+    "outputs":[
+      "qc_reports/*",
+      "mapped/*.bam*"
+    ],
+    "report_index": "final_report.html",
+    "reports":[
+      "final_report.html"
+    ]
+  },
+  "general_params": [
+    "entity_name",
+    "sample_name"
+  ],
+  "requested_params": [
+    "is_paired",
+    "UMI",
+    "umi_usage",
+    "lib_ROI",
+    "reference",
+    "trim_adapters"
+  ],
+  "gui_params" : {
+    "primary": {
+      "lib_ROI": {
+        "label": "Regions of interest",
+        "type": "enum",
+        "default": "wgs",
+        "list": ##INCLUDE:reference_info/lib_ROI.json##
+      }
+    },
+    "detailed": {
+      "count_over": {
+        "label": "Count over",
+        "type": "enum",
+        "default": "exon",
+        "list": {
+          "exon": "Exon",
+          "gene": "Gene",
+          "transcript": "Transcript",
+          "mRNA": "mRNA",
+          "three_prime_utr": "Three prime UTR",
+          "five_prime_utr": "Five prime UTR"
+        }
+      },
+      "max_mapped_reads_to_run_biobloom": {
+        "label": "Biobloom - max mapped ratio",
+        "type": "int",
+        "default": 100
+      },
+      "use_groups": {
+        "label": "Use different groups",
+        "type": "bool",
+        "default": false
+      }
+    },
+    "samples": {
+      "condition": {
+        "label": "Condition",
+        "type": "string",
+        "default": ""
+      },
+      "group": {
+        "label": "Group",
+        "type": "string",
+        "default": "Gr1",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "use_groups": true
+            }
+          }
+        }
+      },
+      "tag": {
+        "label": "Tag",
+        "type": "string",
+        "default": ""
+      }
+    }
+  }
+}
+
+
