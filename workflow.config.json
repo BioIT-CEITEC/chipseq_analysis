@@ -41,8 +41,9 @@
       },
       "eff_genome_size": {
         "label": "Effective genome size",
-        "type": "string",
-        "default": "use unk or look at https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html"
+        "type": "enum",
+        "default": "unk",
+        "list": ##INCLUDE:reference_info/effective_genome_size_reference.json##
       }
     },
     "detailed": {
