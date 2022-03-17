@@ -5,10 +5,9 @@
     "label":"ChIP-seq peak calling",
     "type":"chipseq_analysis",
     "inputs":[
-      "mapped/*"
+      "mapped/*no_dups*"
     ],
     "outputs":[
-      "qc_reports/*",
       "mapped/*.bam*"
     ],
     "report_index": "final_report.html",
@@ -21,45 +20,51 @@
     "sample_name"
   ],
   "requested_params": [
-    "is_paired",
     "UMI",
     "umi_usage",
     "lib_ROI",
-    "reference",
-    "trim_adapters"
+    "trim_adapters",
+    "is_paired",
+    "reference"
   ],
   "gui_params" : {
     "primary": {
-      "lib_ROI": {
-        "label": "Regions of interest",
-        "type": "enum",
-        "default": "wgs",
-        "list": ##INCLUDE:reference_info/lib_ROI.json##
+      "use_groups": {
+        "label": "Compare experiments",
+        "type": "bool",
+        "default": false
+      },
+      "frag_len": {
+        "label": "Fragment length",
+        "type": "string",
+        "default": "unk"
+      },
+      "eff_genome_size": {
+        "label": "<a href='https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html'>Effective genome size</a>",
+        "type": "string",
+        "default": "unk"
       }
     },
     "detailed": {
-      "count_over": {
-        "label": "Count over",
-        "type": "enum",
-        "default": "exon",
-        "list": {
-          "exon": "Exon",
-          "gene": "Gene",
-          "transcript": "Transcript",
-          "mRNA": "mRNA",
-          "three_prime_utr": "Three prime UTR",
-          "five_prime_utr": "Five prime UTR"
-        }
-      },
-      "max_mapped_reads_to_run_biobloom": {
-        "label": "Biobloom - max mapped ratio",
+      "top_peaks": {
+        "label": "Top peaks",
         "type": "int",
-        "default": 100
+        "default": 10
       },
-      "use_groups": {
-        "label": "Use different groups",
-        "type": "bool",
-        "default": false
+      "peak_annot_over": {
+        "label": "Annotate peaks over",
+        "type": "string",
+        "default": "gene"
+      },
+      "peak_annot_by": {
+        "label": "Annotate peaks by",
+        "type": "string",
+        "default": "gene_name,gene_id"
+      },
+      "conds_to_compare": {
+        "label": "Conditions to compare",
+        "type": "string",
+        "default": "all"
       }
     },
     "samples": {
@@ -69,9 +74,9 @@
         "default": ""
       },
       "group": {
-        "label": "Group",
+        "label": "Experiment",
         "type": "string",
-        "default": "Gr1",
+        "default": "",
         "conditions": {
           "relevance": {
             "operand": "equal",
