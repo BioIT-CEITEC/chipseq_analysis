@@ -40,9 +40,9 @@
         "default": "unk"
       },
       "eff_genome_size": {
-        "label": "<a href='https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html'>Effective genome size</a>",
+        "label": "Effective genome size",
         "type": "string",
-        "default": "unk"
+        "default": "use unk or look at https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html"
       }
     },
     "detailed": {
