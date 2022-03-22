@@ -34,12 +34,12 @@
         "type": "bool",
         "default": false
       },
-      "frag_len": {
+      "fragment_length": {
         "label": "Fragment length",
         "type": "string",
         "default": "unk"
       },
-      "eff_genome_size": {
+      "effective_genome_size": {
         "label": "Effective genome size",
         "type": "enum",
         "default": "unk",
@@ -47,6 +47,11 @@
       }
     },
     "detailed": {
+      "quality_cutoff": {
+        "label": "Bad quality cut-off",
+        "type": "int",
+        "default": 20
+      },
       "top_peaks": {
         "label": "Top peaks",
         "type": "int",
