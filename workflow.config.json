@@ -41,9 +41,8 @@
       },
       "effective_genome_size": {
         "label": "Effective genome size",
-        "type": "enum",
-        "default": "unk",
-        "list": ##INCLUDE:reference_info/effective_genome_size_reference.json##
+        "type": "string",
+        "default": "unk"
       }
     },
     "detailed": {
