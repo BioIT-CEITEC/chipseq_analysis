@@ -2,7 +2,7 @@
   "workflow_description": {
     "name":"chipseq_analysis",
     "version": 1.0,
-    "label":"ChIP-seq peak calling",
+    "label":"ChIP-seq peak calling test",
     "type":"chipseq_analysis",
     "inputs":[
       "mapped/*no_dups*"
