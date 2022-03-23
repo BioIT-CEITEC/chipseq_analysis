@@ -2,7 +2,7 @@
   "workflow_description": {
     "name":"chipseq_analysis",
     "version": 1.0,
-    "label":"ChIP-seq peak calling test2",
+    "label":"ChIP-seq peak calling",
     "type":"chipseq_analysis",
     "inputs":[
       "mapped/*no_dups*"
@@ -20,10 +20,6 @@
     "sample_name"
   ],
   "requested_params": [
-    "UMI",
-    "umi_usage",
-    "lib_ROI",
-    "trim_adapters",
     "is_paired",
     "reference"
   ],
@@ -40,6 +36,11 @@
         "default": "unk"
       },
       "effective_genome_size": {
+        "label": "Effective genome size",
+        "type": "string",
+        "default": "unk"
+      },
+      "effective_genome_size_2": {
         "label": "Effective genome size",
         "type": "enum",
         "default": "GRCh38",

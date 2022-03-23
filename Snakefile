@@ -10,11 +10,6 @@ GLOBAL_TMPD_PATH = "./tmp/"
 
 os.makedirs(GLOBAL_TMPD_PATH, exist_ok=True)
 
-# DNA parameteres processing
-#
-if not "lib_ROI" in config:
-    config["lib_ROI"] = "wgs"
-
 # RNA parameteres processing
 #
 if not "strandness" in config:
@@ -64,15 +59,7 @@ if not "fragment_length" in config:
 if not "summary_correlation_method" in config:
     config["summary_correlation_method"] = "spearman"
 
-# Reference processing
-#
-if config["lib_ROI"] != "wgs":
-    # setting reference from lib_ROI
-    f = open(os.path.join(GLOBAL_REF_PATH,"reference_info","lib_ROI.json"))
-    lib_ROI_dict = json.load(f)
-    f.close()
-    config["reference"] = [ref_name for ref_name in lib_ROI_dict.keys() if isinstance(lib_ROI_dict[ref_name],dict) and config["lib_ROI"] in lib_ROI_dict[ref_name].keys()][0]
-
+#### Reference processing ####
 # setting organism from reference
 f = open(os.path.join(GLOBAL_REF_PATH,"reference_info","reference.json"),)
 reference_dict = json.load(f)
@@ -103,11 +90,8 @@ wildcard_constraints:
 ##### Target rules #####
 
 rule all:
-    input:  "qc_reports/final_alignment_report.html"
+    input:  "final_report.html"
 
 ##### Modules #####
 
-include: "rules/quality_control.smk"
-include: "rules/cross_sample_correlation.smk"
-include: "rules/chipseq_specific_qc.smk"
-include: "rules/sample_report.smk"
+include: "rules/peak_calling.smk"
