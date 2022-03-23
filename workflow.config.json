@@ -43,7 +43,7 @@
       "effective_genome_size_2": {
         "label": "Effective genome size",
         "type": "enum",
-        "default": "GRCh38",
+        "default": "2913022398",
         "list": ##INCLUDE:reference_info/effective_genome_size_reference.json##
       }
     },
