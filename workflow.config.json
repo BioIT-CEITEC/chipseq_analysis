@@ -5,7 +5,7 @@
     "label":"ChIP-seq peak calling",
     "type":"chipseq_analysis",
     "inputs":[
-      "mapped/*no_dups*"
+      "mapped/*.bam*"
     ],
     "outputs":[
       "mapped/*.bam*"
