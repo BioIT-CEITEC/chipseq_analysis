@@ -120,14 +120,13 @@ from os.path import split
 #                                 inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".keep_dups/overlap/overlapped_peaks.tsv")
 #     return inputs
 #     
-# rule multiqc_report:
-#     input:  unpack(specify_inputs_for_multiqc_report),
-#     output: report = "multiqc_report.html",
-#     log:    run = "multiqc_report.log",
-#     params: wdir = ADIR,
-#     conda:  "../wrappers/multiqc_report/env.yaml"
-#     script: "../wrappers/multiqc_report/script.py"
-    
+rule multiqc_report:
+    input:  expand("results/peaks_by_macs2/enriched_peaks_summary.{dups}.tsv", dups=["no_dups"]),
+    output: report = "final_report.html",
+    log:    run = "logs/multiqc_report.log",
+    conda:  "../wrappers/multiqc_report/env.yaml"
+    script: "../wrappers/multiqc_report/script.py"
+
     
 #########################################
 # Peak calling

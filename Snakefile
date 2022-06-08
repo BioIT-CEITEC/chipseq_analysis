@@ -108,8 +108,8 @@ wildcard_constraints:
 ##### Target rules #####
 
 rule all:
-    #input:  "final_report.html"
-    input: expand("results/peaks_by_macs2/enriched_peaks_summary.{dups}.tsv", dups=["no_dups"])
+    input:  "final_report.html"
+    # input: expand("results/peaks_by_macs2/enriched_peaks_summary.{dups}.tsv", dups=["no_dups"])
     # input: "dummy"
 
 ##### Modules #####
