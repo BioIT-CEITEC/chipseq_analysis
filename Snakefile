@@ -69,8 +69,8 @@ if not "annotate_by" in config:
   config['annotate_by'] = 'gene_name,gene_id'
 if not "UMI" in config:
   config["UMI"] = "no"
-if not "use_groups" in config:
-  config["use_groups"] = False
+# if not "use_groups" in config:
+#   config["use_groups"] = False
 
 #### Reference processing ####
 # setting organism from reference
@@ -91,14 +91,14 @@ sample_tab = pd.DataFrame.from_dict(config["samples"],orient="index")
 # sample_tab = pd.DataFrame({'sample_name': ['karpas', 'pfeiffer', 'pfeiffer_ctr'],
 #                             'condition': ['chip', 'chip2', 'ctrl'],
 #                             'tag': ['','','']})
-if config["use_groups"] == False:
-  sample_tab['group'] = ""
-sample_tab['is_control'] = np.where(sample_tab['condition'].isin(["control","ctrl"]), True, False)
-sample_tab['name'] = sample_tab[["group", "condition"]].apply("_".join, axis=1) if config["use_groups"] else sample_tab['condition']
-# sample_tab = sample_tab[sample_tab.is_control == False]
-# sample_tab = sample_tab[sample_tab.group == "karpas"]
-# print(sample_tab)
-sample_tab['control'] = sample_tab.apply(lambda row: sample_tab.loc[(sample_tab.group == row.group) & (sample_tab.is_control == True), 'name'].unique(), axis=1)
+# if config["use_groups"] == False:
+#   sample_tab['group'] = ""
+# sample_tab['is_control'] = np.where(sample_tab['condition'].isin(["control","ctrl"]), True, False)
+# sample_tab['name'] = sample_tab[["group", "condition"]].apply("_".join, axis=1) if config["use_groups"] else sample_tab['condition']
+# # sample_tab = sample_tab[sample_tab.is_control == False]
+# # sample_tab = sample_tab[sample_tab.group == "karpas"]
+# # print(sample_tab)
+# sample_tab['control'] = sample_tab.apply(lambda row: sample_tab.loc[(sample_tab.group == row.group) & (sample_tab.is_control == True), 'name'].unique(), axis=1)
 print(sample_tab)
 
 wildcard_constraints:

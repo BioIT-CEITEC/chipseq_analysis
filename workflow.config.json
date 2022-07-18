@@ -8,7 +8,10 @@
       "mapped/*.bam*"
     ],
     "outputs":[
-      "mapped/*.bam*"
+      "mapped/*",
+      "logs/*",
+      "results/*",
+      "final_report*"
     ],
     "report_index": "final_report.html",
     "reports":[
@@ -45,11 +48,6 @@
         "type": "enum",
         "default": "2913022398",
         "list": ##INCLUDE:reference_info/effective_genome_size_reference.json##
-      },
-      "use_groups": {
-        "label": "Compare experiments",
-        "type": "bool",
-        "default": false
       }
     },
     "detailed": {
@@ -85,22 +83,18 @@
         "type": "string",
         "default": ""
       },
-      "group": {
-        "label": "Experiment",
-        "type": "string",
-        "default": "",
-        "conditions": {
-          "relevance": {
-            "operand": "equal",
-            "negation": false,
-            "values": {
-              "use_groups": true
-            }
-          }
-        }
+      "iscontrol": {
+        "label": "Is control?",
+        "type": "bool",
+        "default": false
       },
       "tag": {
-        "label": "Tag",
+        "label": "Replicate",
+        "type": "string",
+        "default": ""
+      },
+      "control": {
+        "label": "Control to use",
         "type": "string",
         "default": ""
       }
