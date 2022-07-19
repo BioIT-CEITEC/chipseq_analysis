@@ -83,7 +83,7 @@
         "type": "string",
         "default": ""
       },
-      "iscontrol": {
+      "is_control": {
         "label": "Is control?",
         "type": "bool",
         "default": false
