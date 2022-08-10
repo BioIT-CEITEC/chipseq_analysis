@@ -23,6 +23,7 @@
     "sample_name"
   ],
   "requested_params": [
+    "is_paired",
     "UMI"
   ],
   "gui_params" : {
