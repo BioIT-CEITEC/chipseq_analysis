@@ -7,11 +7,17 @@
     "inputs":[
       "mapped/*.bam*"
     ],
+    "inputs_optional":[
+      "gene_sets/*"
+    ],
     "outputs":[
       "mapped/*",
       "logs/*",
       "results/*",
       "final_report*"
+    ],
+    "outputs_optional":[
+      "gene_sets/*"
     ],
     "report_index": "final_report.html",
     "reports":[
@@ -23,7 +29,8 @@
     "sample_name"
   ],
   "requested_params": [
-    "UMI"
+    "is_paired",
+    "reference"
   ],
   "gui_params" : {
     "primary": {

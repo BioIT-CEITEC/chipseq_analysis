@@ -46,11 +46,24 @@ if not 'macs_padj_filter' in config:
 if not 'filter_blacklist' in config:
   config['filter_blacklist'] = 'yes'
 if not 'top_peaks_neighborhood' in config:
-  config['top_peaks_neighborhood'] = '200'
+  config['top_peaks_neighborhood'] = 200
 if not 'top_peaks' in config:
-  config['top_peaks'] = '20'
+  config['top_peaks'] = 20
 if not 'peak_profiles_radius' in config:
-  config['peak_profiles_radius'] = '500'
+  config['peak_profiles_radius'] = 500
+if not 'rel_profile' in config:
+  config['rel_profile'] = 'no' # [yes, no, only]
+if not 'gene_sets' in config:
+  config['gene_sets'] = 'all_genes'
+if not 'profile_avrg' in config:
+  config['profile_avrg'] = 'median'
+if not 'profile_type' in config:
+  config['profile_type'] = 'lines'
+if not 'after_genes' in config:
+  config['after_genes'] = 500
+if not 'before_genes' in config:
+  config['before_genes'] = 500
+  
 if not 'bdgdiff_logLR_cutoff' in config:
   config['bdgdiff_logLR_cutoff'] = '3'
 if not 'bdgdiff_min_len' in config:
@@ -69,8 +82,16 @@ if not "annotate_by" in config:
   config['annotate_by'] = 'gene_name,gene_id'
 if not "UMI" in config:
   config["UMI"] = "no"
+if not "dups" in config:
+  config["dups"] = "no_dups"
 # if not "use_groups" in config:
 #   config["use_groups"] = False
+if not "macs_broad_peaks" in config:
+  config["macs_broad_peaks"] = False
+if not "macs_broad_cutof" in config:
+  config["macs_broad_cutof"] = 0.1
+if not "idr_cutof" in config:
+  config['idr_cutof'] = 0.05
 
 #### Reference processing ####
 # setting organism from reference
@@ -87,6 +108,12 @@ reference_directory = os.path.join(GLOBAL_REF_PATH,config["organism"],config["re
 # Samples
 #
 sample_tab = pd.DataFrame.from_dict(config["samples"],orient="index")
+sample_tab['num_of_reps'] = sample_tab.groupby("condition")["tag"].transform('nunique')
+sample_tab = pd.DataFrame(sample_tab.control.str.split(';').tolist(), index=sample_tab.sample_name).stack().reset_index([0, 'sample_name']).merge(sample_tab.drop('control',axis=1), on='sample_name')
+sample_tab.rename(columns = {0:'control'}, inplace = True)
+sample_tab['control'] = sample_tab.apply(lambda row: 'no_control' if (not row.is_control) & (not row.control) else row.control, axis=1)
+sample_tab['name'] = sample_tab.apply(lambda row: row.condition if row.tag == '' else "_".join([row.condition, row.tag]), axis=1)
+sample_tab['peaks_name'] = sample_tab.apply(lambda row: '' if row['is_control'] else '_VS_'.join([row['name'],row['control']]), axis=1)
 # config["use_groups"] = False
 # sample_tab = pd.DataFrame({'sample_name': ['karpas', 'pfeiffer', 'pfeiffer_ctr'],
 #                             'condition': ['chip', 'chip2', 'ctrl'],
@@ -101,16 +128,27 @@ sample_tab = pd.DataFrame.from_dict(config["samples"],orient="index")
 # sample_tab['control'] = sample_tab.apply(lambda row: sample_tab.loc[(sample_tab.group == row.group) & (sample_tab.is_control == True), 'name'].unique(), axis=1)
 print(sample_tab)
 
+#### Setting up the reference gene set ####
+default_reference = GLOBAL_REF_PATH+config['organism']+"/"+config['reference']+"/annot/"+config['reference']+".gtf"
+if 'gene_sets' in config:
+    gene_sets = {y[0]:y[1] if y[0] != "all_genes" else default_reference for y in [x.split(':') for x in config['gene_sets'].split(';')]}
+else:
+    gene_sets = {'all_genes': default_reference}
+print(gene_sets)
+
+#### Setting up wildcard constraints ####
 wildcard_constraints:
-     sample = "|".join(sample_tab.sample_name) + "|all_samples",
+     # sample = "|".join(sample_tab.sample_name) + "|all_samples",
      lib_name="[^\.\/]+",
+     dups="no_dups|keep_dups"
 
 ##### Target rules #####
 
 rule all:
-    input:  "final_report.html"
-    # input: expand("results/peaks_by_macs2/enriched_peaks_summary.{dups}.tsv", dups=["no_dups"])
-    # input: "dummy"
+    # input:  "final_report.html", "dummy"
+    # input: expand("mapped/pseudo/{cond}_rep1.{dups}.bam", cond=sample_tab.condition.unique(), dups=config['dups'])
+    # input: expand("results/MACS_peaks/{name}/{name}.{dups}.peaks.all.narrowPeak", name=[i for i in sample_tab.peaks_name.unique() if i != ''], dups=config['dups'])
+    input: "dummy"
 
 ##### Modules #####
 

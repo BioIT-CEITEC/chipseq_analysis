@@ -22,7 +22,7 @@ f.close()
 
 command = "(time makeTagDirectory"+\
           " "+snakemake.output.tagdir+\
-          " "+snakemake.input.bam+\
+          " "+" ".join(snakemake.input.bam)+\
           " -format sam"+\
           " -totalReads all"+\
           " -genome "+snakemake.input.fa+\

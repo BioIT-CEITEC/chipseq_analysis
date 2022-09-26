@@ -19,10 +19,6 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA: "+version+"\n")
 f.close()
 
-# if snakemake.wildcards.dups == "keep_dups" or snakemake.params.umi != "no":
-#    keep_dups = "all"
-# else:
-#    keep_dups = "1"
 keep_dups = "all"
 
 if snakemake.params.frag_len == "unk":
@@ -33,29 +29,10 @@ else:
 input_line = "-t "+" ".join(snakemake.input.trt)
 if hasattr(snakemake.input, 'ctl'):
   input_line += " -c "+" ".join(snakemake.input.ctl)
-# # if snakemake.params.with_ctl:
-#   # bam_input = " ".join(snakemake.input[2:])
-#   command = "(time macs2 callpeak -t "+snakemake.input.trt+\
-#             " -c "+snakemake.input.ctl+\
-#             " --keep-dup "+keep_dups+\
-#             " -g "+str(snakemake.params.effective_GS)+\
-#             " --outdir "+snakemake.params.dir+\
-#             " --name "+snakemake.params.name+\
-#             " "+nomodel+\
-#             " --bdg"+\
-#             " --tempdir "+snakemake.params.temp+\
-#             " -q 1 ) >> "+snakemake.log.run+" 2>&1"
-# else:
-#   # bam_input = " ".join(snakemake.input[1:])
-#   command = "(time macs2 callpeak -t "+bam_input+\
-#             " --keep-dup "+keep_dups+\
-#             " -g "+str(snakemake.params.effective_GS)+\
-#             " --outdir "+snakemake.params.dir+\
-#             " --name "+snakemake.params.name+\
-#             " "+nomodel+\
-#             " --bdg"+\
-#             " --tempdir "+snakemake.params.temp+\
-#             " -q 1 ) >> "+snakemake.log.run+" 2>&1"
+  
+# if int(subprocess.Popen("conda list 2>&1 ", shell=True, stdout=subprocess.PIPE).communicate()[0])
+if hasattr(snakemake.params, 'paired'):
+  input_line += " -f BAMPE" if snakemake.params.paired else " -f BAM"
             
 command = "(time macs2 callpeak "+input_line+\
           " --keep-dup "+keep_dups+\
@@ -84,35 +61,35 @@ f.close()
 shell(command)
 
 # rename original output file
-command = "mv "+snakemake.params.xls_tab+" "+snakemake.params.xls_tab_all+" >> "+snakemake.log.run+" 2>&1"
+command = "mv "+snakemake.params.xls_tab+" "+snakemake.output.xls_tab_all+" >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
 # rename original output file with no cutof
-command = "mv "+snakemake.params.sum_tab+" "+snakemake.params.sum_tab_all+" >> "+snakemake.log.run+" 2>&1"
+command = "mv "+snakemake.params.sum_tab+" "+snakemake.output.sum_tab_all+" >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
 # rename original output file with no cutof
-command = "mv "+snakemake.params.nar_tab+" "+snakemake.params.nar_tab_all+" >> "+snakemake.log.run+" 2>&1"
+command = "mv "+snakemake.params.nar_tab+" "+snakemake.output.nar_tab_all+" >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
 # use Qvalue cutof
-command = "(time awk -v OFS='\t' -F '\t' '$9 > -log("+str(snakemake.params.qval_cutof)+")/log(10)' "+snakemake.params.nar_tab_all+" > "+snakemake.output.nar_tab+") 2>> "+snakemake.log.run
+command = "(time awk -v OFS='\t' -F '\t' '$9 > -log("+str(snakemake.params.qval_cutof)+")/log(10)' "+snakemake.output.nar_tab_all+" > "+snakemake.output.nar_tab+") 2>> "+snakemake.log.run
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
 # use Qvalue cutof
-command = "(time awk -v OFS='\t' -F '\t' '$5 > -log("+str(snakemake.params.qval_cutof)+")/log(10)' "+snakemake.params.sum_tab_all+" > "+snakemake.output.sum_tab+") 2>> "+snakemake.log.run
+command = "(time awk -v OFS='\t' -F '\t' '$5 > -log("+str(snakemake.params.qval_cutof)+")/log(10)' "+snakemake.output.sum_tab_all+" > "+snakemake.output.sum_tab+") 2>> "+snakemake.log.run
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
