@@ -82,6 +82,11 @@
         "label": "Conditions to compare",
         "type": "string",
         "default": "all"
+      },
+      "gene_sets": {
+        "label": "Genes of interest",
+        "type": "string",
+        "default": "all_genes"
       }
     },
     "samples": {
