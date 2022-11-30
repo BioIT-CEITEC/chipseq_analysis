@@ -8,7 +8,10 @@
       "mapped/*.bam*"
     ],
     "inputs_optional":[
-      "gene_sets/*"
+      "gene_sets/*",
+      "qc_reports/*/phantompeakqual/*",
+      "qc_reports/all_samples/deeptools/*",
+      "qc_reports/*/qc_samtools/*"
     ],
     "outputs":[
       "mapped/*",
@@ -29,7 +32,6 @@
     "sample_name"
   ],
   "requested_params": [
-    "is_paired",
     "reference"
   ],
   "gui_params" : {
