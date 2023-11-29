@@ -36,15 +36,8 @@ cl_conf+= " --cl_config \"fn_ignore_files:['*.profile.data']\""
 
 multiqc_search_paths = "./"
 multiqc_search_paths+= " --ignore \""+snakemake.params.repdir+"\""
-command = "multiqc -f -n "+snakemake.output.report+" "+cl_conf+" "+multiqc_search_paths+" >> "+snakemake.log.run+" 2>&1 "
+command = "multiqc -f -z -n "+snakemake.output.report+" "+cl_conf+" "+multiqc_search_paths+" >> "+snakemake.log.run+" 2>&1 "
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
-
-command = "zip -r "+snakemake.output.zip+" "+snakemake.params.repdir+" >> "+snakemake.log.run+" 2>&1"
-f = open(snakemake.log.run, 'at')
-f.write("## COMMAND: "+command+"\n")
-f.close()
-shell(command)
-

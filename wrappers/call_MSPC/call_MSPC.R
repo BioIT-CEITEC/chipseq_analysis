@@ -9,8 +9,8 @@ replicateType = args[1]
 stringencyThreshold = as.numeric(args[2])
 weakThreshold = as.numeric(args[3])
 alpha = as.numeric(args[4])
-keep = TRUE
-GRanges = FALSE
+keep = FALSE
+GRanges = TRUE
 multipleIntersections = "Lowest"
 degreeOfParallelism = as.numeric(args[5])
 c = 2
@@ -31,17 +31,30 @@ results <- mspc(
   GRanges = GRanges,
   multipleIntersections = multipleIntersections,
   degreeOfParallelism = degreeOfParallelism,
-  outputPath = outputPath,
+  outputPath = NULL,
   c = c,
   alpha = alpha)
 
-print("# postprocessing output BED")
-tab = fread(paste0(outputPath, "/ConsensusPeaks.bed"), sep = "\t", col.names = c("chr","start","end","peak_id","score"))
-tab[,chr:=sub("^chr","",chr)]
-tab[,strand:="."]
-tab[,signal:=1]
-tab[,pvalue:=score]
-tab[,qvalue:=-1*log10(p.adjust(10^-pvalue,"BH"))]
-tab[,summit:=floor((end - start)*0.5)]
+print("# MSPC finished, writinng down the results:")
+fwrite(as.data.table(results$GRangesObjects$ConsensusPeaks),
+       paste0(outputPath,"/ConsensusPeaks.bed"), 
+       sep="\t", 
+       row.names=F, 
+       col.names=T)
+
+print("# postprocessing output table")
+tab = copy(as.data.table(results$GRangesObjects$ConsensusPeaks))[,.(
+  #chr=sub("^chr","",seqnames),   # Not sure why did I set this hard-coded name trimming, might be usefull in some cases
+  chr=seqnames,
+  start, 
+  end, 
+  name, 
+  score, 
+  strand=".", 
+  signal=1, 
+  pvalue=score,
+  qvalue=-1*log10(p.adjust(10^-score,"BH")), 
+  summit=floor((end - start)*0.5)
+  )]
 tab[,score:=floor(10*qvalue)]
 fwrite(tab, outputBed, sep = "\t", quote = F, row.names = F, col.names = F)

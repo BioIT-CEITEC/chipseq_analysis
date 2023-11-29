@@ -19,6 +19,9 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA: "+version+"\n")
 f.close()
 
+with open(snakemake.log.run, 'at') as f:
+  f.write("## INFO: Processing following tags: "+", ".join(snakemake.params.tags)+"\n")
+
 command = "(time samtools merge -f -u -o "+snakemake.params.merged+" "+" ".join(snakemake.input.bam)+\
           " ) >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
@@ -50,32 +53,41 @@ f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
-command = "cat "+snakemake.params.header+" "+snakemake.params.prefix+"1."+snakemake.wildcards.dups+".sam"+\
-          " | samtools view -b - > "+snakemake.output.r1+\
-          " 2>> "+snakemake.log.run
-f = open(snakemake.log.run, 'at')
-f.write("## COMMAND: "+command+"\n")
-f.close()
-shell(command)
+prefix_counter = 1
+for rep in ['rep1', 'rep2', 'rep3', 'rep4']:
+  if rep in snakemake.params.tags:
+      command = "cat "+snakemake.params.header+" "+snakemake.params.prefix+str(prefix_counter)+"."+snakemake.wildcards.dups+".sam"+\
+                " | samtools view -b - > "+snakemake.output[rep]+\
+                " 2>> "+snakemake.log.run
+      prefix_counter += 1
+  else:
+      command = "touch "+snakemake.output[rep]+" >> "+snakemake.log.run+" 2>&1"
+  f = open(snakemake.log.run, 'at')
+  f.write("## COMMAND: "+command+"\n")
+  f.close()
+  shell(command)
 
-command = "cat "+snakemake.params.header+" "+snakemake.params.prefix+"2."+snakemake.wildcards.dups+".sam"+\
-          " | samtools view -b - > "+snakemake.output.r2+\
-          " 2>> "+snakemake.log.run
-f = open(snakemake.log.run, 'at')
-f.write("## COMMAND: "+command+"\n")
-f.close()
-shell(command)
-
-if int(num_reps) == 3:
-    command = "cat "+snakemake.params.header+" "+snakemake.params.prefix+"3."+snakemake.wildcards.dups+".sam"+\
-              " | samtools view -b - > "+snakemake.output.r3+\
-              " 2>> "+snakemake.log.run
-else:
-    command = "touch "+snakemake.output.r3+" >> "+snakemake.log.run+" 2>&1"
-f = open(snakemake.log.run, 'at')
-f.write("## COMMAND: "+command+"\n")
-f.close()
-shell(command)
+# if 'rep2' in snakemake.params.tags:
+#     command = "cat "+snakemake.params.header+" "+snakemake.params.prefix+"2."+snakemake.wildcards.dups+".sam"+\
+#               " | samtools view -b - > "+snakemake.output.r2+\
+#               " 2>> "+snakemake.log.run
+# else:
+#     command = "touch "+snakemake.output.r2+" >> "+snakemake.log.run+" 2>&1"
+# f = open(snakemake.log.run, 'at')
+# f.write("## COMMAND: "+command+"\n")
+# f.close()
+# shell(command)
+# 
+# if 'rep3' in snakemake.params.tags:
+#     command = "cat "+snakemake.params.header+" "+snakemake.params.prefix+"3."+snakemake.wildcards.dups+".sam"+\
+#               " | samtools view -b - > "+snakemake.output.r3+\
+#               " 2>> "+snakemake.log.run
+# else:
+#     command = "touch "+snakemake.output.r3+" >> "+snakemake.log.run+" 2>&1"
+# f = open(snakemake.log.run, 'at')
+# f.write("## COMMAND: "+command+"\n")
+# f.close()
+# shell(command)
 
 command = "rm -rf "+snakemake.params.merged+" "+snakemake.params.header+" "+snakemake.params.prefix+"*sam >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')

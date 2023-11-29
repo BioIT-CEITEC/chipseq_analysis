@@ -9,6 +9,7 @@ import re
 from snakemake.shell import shell
 from PyPDF2 import PdfFileMerger, PdfFileReader
 import pdfkit
+# from fpdf import FPDF
 
 f = open(snakemake.log.run, 'a+')
 f.write("\n##\n## RULE: plot_selected_peak_profiles \n##\n")
@@ -26,6 +27,11 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     f.write("## WARNING: Input file "+snakemake.input.bed+" is missing or empty\n")
     f.close()
     pdfkit.from_string('Input file '+snakemake.input.bed+' is missing or empty!', snakemake.output.plot)
+    # pdf = FPDF()
+    # pdf.add_page()
+    # pdf.set_font("helvetica", size=16)
+    # pdf.write(txt='Input file '+snakemake.input.bed+' is missing or empty!')
+    # pdf.output(snakemake.output.plot)
     
 else:
     os.makedirs(snakemake.params.prefix, exist_ok=True)
@@ -64,13 +70,21 @@ else:
         with open(bed_list[-1]+'.bed', 'w') as o:
           o.write(line+os.linesep)
     
-        command = "computeMatrix scale-regions -S "+snakemake.input.bwg+" -R "+bed_list[-1]+'.bed'+" -o "+snakemake.params.mtx+" "+extra+" --smartLabels -a "+str(snakemake.params.after)+" -b "+str(snakemake.params.before)+" -p "+str(snakemake.threads)+" >> "+snakemake.log.run+" 2>&1"
+        command = "$(which time) computeMatrix scale-regions -S "+snakemake.input.bwg+\
+                  " -R "+bed_list[-1]+'.bed'+" -o "+snakemake.params.mtx+" "+extra+\
+                  " --smartLabels -a "+str(snakemake.params.after)+" -b "+str(snakemake.params.before)+\
+                  " -p "+str(snakemake.threads)+" >> "+snakemake.log.run+" 2>&1"
         f = open(snakemake.log.run, 'at')
         f.write("## COMMAND: "+command+"\n")
         f.close()
         shell(command)
     
-        command = "plotProfile -m "+snakemake.params.mtx+" -o "+bed_list[-1]+'.profile.pdf'+" --outFileNameData "+bed_list[-1]+'.profile.data'+" --perGroup --regionsLabel \""+region_label+"\" --plotTitle \""+plot_title+"\" --samplesLabel \""+snakemake.params.sample_name+"\" --dpi "+str(snakemake.params.dpi)+" --averageType "+snakemake.params.profile_avrg+" --plotType "+snakemake.params.profile_type+" --plotHeight 14 --plotWidth 22 --startLabel start --endLabel end >> "+snakemake.log.run+" 2>&1"
+        command = "$(which time) plotProfile -m "+snakemake.params.mtx+" -o "+bed_list[-1]+'.profile.pdf'+\
+                  " --outFileNameData "+bed_list[-1]+'.profile.data'+" --perGroup"+\
+                  " --regionsLabel \""+region_label+"\" --plotTitle \""+plot_title+"\""+\
+                  " --samplesLabel \""+snakemake.params.sample_name+"\" --dpi "+str(snakemake.params.dpi)+\
+                  " --averageType "+snakemake.params.profile_avrg+" --plotType "+snakemake.params.profile_type+\
+                  " --plotHeight 14 --plotWidth 22 --startLabel start --endLabel end >> "+snakemake.log.run+" 2>&1"
         # command = "plotProfile -m "+snakemake.params.mtx+" -o "+bed_list[-1]+'.pdf'+" --perGroup --regionsLabel \""+region_label+"\" --plotTitle \""+plot_title+"\" --samplesLabel \""+snakemake.params.sample_name+"\" --dpi "+str(snakemake.params.dpi)+" --averageType "+snakemake.params.profile_avrg+" --plotType "+snakemake.params.profile_type+" --plotHeight 14 --plotWidth 22 --startLabel peak_start --endLabel peak_end >> "+snakemake.log.run+" 2>&1"
         f = open(snakemake.log.run, 'at')
         f.write("## COMMAND: "+command+"\n")

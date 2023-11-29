@@ -16,11 +16,11 @@ shell.executable("/bin/bash")
 
 version = str(subprocess.Popen("conda list 2>&1 ", shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
 f = open(snakemake.log.run, 'at')
-f.write("## CONDA: "+version+"\n")
+f.write("## CONDA:\n"+version+"\n")
 f.close()
 
 # Tec 0.001 0.01 0.05 10 outputDir inputs
-command = "(time Rscript "+snakemake.params.rscript+\
+command = "$(which time) Rscript "+snakemake.params.rscript+\
           " "+snakemake.params.rep_type+\
           " "+str(snakemake.params.strong)+\
           " "+str(snakemake.params.weak)+\
@@ -28,7 +28,7 @@ command = "(time Rscript "+snakemake.params.rscript+\
           " "+str(snakemake.threads)+\
           " "+snakemake.output.bed+\
           " "+" ".join(snakemake.input)+\
-          " ) >> "+snakemake.log.run+" 2>&1"
+          " >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()

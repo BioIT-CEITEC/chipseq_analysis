@@ -8,7 +8,6 @@ import re
 from snakemake.shell import shell
 import pandas as pd
 import math
-import sys
 import statistics
 
 sys.stdout = open(snakemake.log.run, 'a+')
@@ -94,28 +93,3 @@ df = pd.DataFrame(data=cols).sort_values(by = 'name')
 # print(sorted_cols)
 # df[sorted_cols].to_csv(snakemake.output.tab, sep="\t", header = True, index = False)
 df.to_csv(snakemake.output.tab, sep="\t", header = True, index = False)
-        
-
-# if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) > 0:
-#     command = "Rscript "+snakemake.params.rscript+" "+snakemake.input.bed+" "+snakemake.input.gtf+" "+snakemake.output.bed+" "+snakemake.params.feat_type+" "+snakemake.params.annotate_by+" >> "+snakemake.log.run+" 2>&1"
-#     f = open(snakemake.log.run, 'at')
-#     f.write("## COMMAND: "+command+"\n")
-#     f.close()
-#     shell(command)
-#     
-#     command = "sed -i '1 s/^\([^\t]\+\t\)\{{10\}}/chr\tstart\tend\tname\tscore\tstrand\tlog2FC\tPvalue\tQvalue\trel_peak_pos\t/' "+snakemake.output.bed+" >> "+snakemake.log.run+" 2>&1"
-#     f = open(snakemake.log.run, 'at')
-#     f.write("## COMMAND: "+command+"\n")
-#     f.close()
-#     shell(command)
-#     
-# else:
-#     with open(snakemake.log.run, 'at') as f:
-#         f.write("## NOTE: "+snakemake.input.bed+" is empty\n")
-#   
-#     command = "touch "+snakemake.output.bed+" >> "+snakemake.log.run+" 2>&1"
-#     f = open(snakemake.log.run, 'at')
-#     f.write("## COMMAND: "+command+"\n")
-#     f.close()
-#     shell(command)
-

@@ -7,7 +7,8 @@ import math
 import subprocess
 import re
 from snakemake.shell import shell
-import pdfkit
+#import pdfkit
+from fpdf import FPDF
 
 f = open(snakemake.log.run, 'a+')
 f.write("\n##\n## RULE: plot_average_peak_profile \n##\n")
@@ -24,7 +25,12 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     f = open(snakemake.log.run, 'at')
     f.write("## WARNING: Input file "+snakemake.input.bed+" is missing or empty\n")
     f.close()
-    pdfkit.from_string('Input file '+snakemake.input.bed+' is missing or empty!', snakemake.output.plot)
+    #pdfkit.from_string('Input file '+snakemake.input.bed+' is missing or empty!', snakemake.output.plot)
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("helvetica", size=16)
+    pdf.write(txt='Input file '+snakemake.input.bed+' is missing or empty!')
+    pdf.output(snakemake.output.plot)
     
 else:
     extra = "--sortRegions keep"

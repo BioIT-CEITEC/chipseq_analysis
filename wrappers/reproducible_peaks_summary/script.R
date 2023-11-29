@@ -1,17 +1,19 @@
 #########################################
 # wrapper for rule: reproducible_peaks_summary
 #########################################
-library(data.table)
-
 shell = function(cmd) {
   cat(system(cmd, intern = T), sep = '\n')
 }
 
 logfile = snakemake@log[["run"]]
-sink(logfile, append = T)
+sink(logfile, append = T, type = "output")
+sink(stdout(), append = T, type = "message")
+
 cat("##\n## RULE: reproducible_peaks_summary \n##\n")
-cat("## CONDA: ")
+cat("## CONDA:\n")
 shell("conda list 2>&1")
+
+library(data.table)
 
 beds = snakemake@input[['bed']]
 tab = data.table()

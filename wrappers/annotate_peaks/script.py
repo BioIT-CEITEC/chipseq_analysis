@@ -17,18 +17,18 @@ shell.executable("/bin/bash")
 
 version = str(subprocess.Popen("conda list 2>&1", shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
 f = open(snakemake.log.run, 'at')
-f.write("## CONDA: "+version+"\n")
+f.write("## CONDA:\n"+version+"\n")
 f.close()
 
 if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) > 0:
-    command = "(time annotatePeaks.pl"+\
+    command = "TMP=TMPDIR=TEMP="+snakemake.params.tmpd+" $(which time) annotatePeaks.pl"+\
               " "+snakemake.input.bed+\
               " "+snakemake.input.fa+\
               " -gtf "+snakemake.input.gtf+\
               " -annStats "+snakemake.output.annstats+\
               " -size given"+\
               " -d "+" ".join(snakemake.input.tagdir)+\
-              " > "+snakemake.output.tsv+") 2>> "+snakemake.log.run
+              " > "+snakemake.output.tsv+" 2>> "+snakemake.log.run
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     f.close()
@@ -44,11 +44,11 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     out.drop(columns=['Chr','Start','End','Strand','Peak_Score'], inplace=True)
     out.to_csv(snakemake.output.tsv, sep="\t", header=True, index=False)
     
-    command = "(time Rscript "+snakemake.params.rscript+\
+    command = "$(which time) Rscript "+snakemake.params.rscript+\
               " "+snakemake.output.tsv+\
               " "+str(snakemake.params.fdr_cutof)+\
               " "+str(snakemake.params.best)+\
-              ") >> "+snakemake.log.run+" 2>&1"
+              " >> "+snakemake.log.run+" 2>&1"
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     f.close()
@@ -58,7 +58,7 @@ else:
     with open(snakemake.log.run, 'at') as f:
         f.write("## NOTE: "+snakemake.input.bed+" is empty\n")
   
-    command = "touch "+snakemake.output.tsv+" >> "+snakemake.log.run+" 2>&1"
+    command = "touch "+" ".join(snakemake.output)+" >> "+snakemake.log.run+" 2>&1"
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     f.close()

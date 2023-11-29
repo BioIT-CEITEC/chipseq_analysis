@@ -11,6 +11,7 @@ library(scales)
 # homer_file="results/MSPC_peaks/p53wt_360/p53wt_360.no_dups.peaks.all.annotated.new.tsv"
 # fdr_cutof = 0.05
 # best = 10
+#args = c("results/MSPC_peaks/Mut_H33_Fl/Mut_H33_Fl.no_dups.peaks.all.annotated.tsv", "0.05", "10")
 
 args = commandArgs(trailingOnly=TRUE)
 print(args)
@@ -19,7 +20,7 @@ fdr_cutof = as.numeric(args[2])
 best = as.numeric(args[3])
 
 prefix = sub("\\.tsv$","",homer_file)
-homer=fread(homer_file, sep = '\t')
+homer = fread(homer_file, sep = '\t')
 homer[,ann_type:=gsub(" \\(.*","",Annotation)]
 if(homer[is.na(Distance_to_TSS),.N]>0) {
   homer[is.na(Distance_to_TSS),ann_type:="unannotated"]
@@ -127,21 +128,28 @@ print(annot_types_plot)
 dev.off()
 
 # plot HOMER score and FDR of filtered peaks against the annotation type (TSS, exon, intron, etc)
-annot_types_plot_2 = ggplot(homer[FDR<fdr_cutof], aes(x=ann_type, y=score))+
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75))+
-  # geom_jitter(aes(color=FDR<fdr_cutof), width = .4, alpha = .25)+
-  # scale_color_manual(values = c("red", "black"))+
-  geom_hline(yintercept = -10*log10(fdr_cutof), linetype="dashed", colour = "red")+
-  scale_y_continuous(breaks=y_scale, labels=y_scale_labels)+
-  theme(legend.position = "top")+
-  scale_x_discrete(
-    limits=order_ann_types,
-    breaks=order_ann_types,
-    labels=homer[FDR<fdr_cutof, paste0(.BY,"\n#",.N,"\n(",round(.N/homer[FDR<fdr_cutof,.N]*100,2),"%)"), keyby=.(ann_type)][order_ann_types, V1])+
-  labs(title="Plot of (filtered) peaks distribution according to annotation types", 
-       subtitle=paste0("filter on FDR < ",fdr_cutof),
-       x ="genomic annotation type", 
-       y ="peak score by MACS2 (peak FDR)")
+if(homer[FDR<fdr_cutof,.N] > 0) {
+  annot_types_plot_2 = ggplot(homer[FDR<fdr_cutof], aes(x=ann_type, y=score))+
+    geom_violin(draw_quantiles = c(0.25, 0.5, 0.75))+
+    # geom_jitter(aes(color=FDR<fdr_cutof), width = .4, alpha = .25)+
+    # scale_color_manual(values = c("red", "black"))+
+    geom_hline(yintercept = -10*log10(fdr_cutof), linetype="dashed", colour = "red")+
+    scale_y_continuous(breaks=y_scale, labels=y_scale_labels)+
+    theme(legend.position = "top")+
+    scale_x_discrete(
+      limits=order_ann_types,
+      breaks=order_ann_types,
+      labels=homer[FDR<fdr_cutof, paste0(.BY,"\n#",.N,"\n(",round(.N/homer[FDR<fdr_cutof,.N]*100,2),"%)"), keyby=.(ann_type)][order_ann_types, V1])+
+    labs(title="Plot of (filtered) peaks distribution according to annotation types", 
+         subtitle=paste0("filter on FDR < ",fdr_cutof),
+         x ="genomic annotation type", 
+         y ="peak score by MACS2 (peak FDR)")
+} else {
+  annot_types_plot_2 = ggplot() +
+    theme_void() +
+    geom_text(aes(0,0,label=paste0('Not enough data after using filter FDR<',fdr_cutof,'!'))) +
+    xlab(NULL)
+}
 pdf(paste0(prefix,".annot_types_filt.pdf"), width = 12, height = 9)
 print(annot_types_plot_2)
 dev.off()
@@ -168,22 +176,29 @@ dev.off()
 
 order_chr_types = order_chr_types[which(order_chr_types %in% homer[FDR<fdr_cutof,unique(new_chr)])]
 # plot HOMER score and FDR of filtered peaks against the chromosomes/contigs
-chr_plot_2 = ggplot(homer[FDR<fdr_cutof], aes(x=new_chr, y=score))+
-  geom_point(data=homer[FDR<fdr_cutof,.(.N,score),by=.(new_chr)][N<2,.(new_chr,score)])+
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75))+
-  # geom_jitter(aes(color=FDR<fdr_cutof), width = .4, alpha = .25)+
-  # scale_color_manual(values = c("red", "black"))+
-  geom_hline(yintercept = -10*log10(fdr_cutof), linetype="dashed", colour = "red")+
-  scale_y_continuous(breaks=y_scale, labels=y_scale_labels)+
-  theme(legend.position = "top")+
-  scale_x_discrete(
-    limits=order_chr_types,
-    breaks=order_chr_types,
-    labels=homer[FDR<fdr_cutof, paste0(.BY,"\n#",.N,"\n(",round(.N/homer[FDR<fdr_cutof,.N]*100,2),"%)"), keyby=.(new_chr)][order_chr_types, V1])+
-  labs(title="Plot of (filtered) peaks distribution according to chromosomes/contigs",
-       subtitle=paste0("filter on FDR < ",fdr_cutof), 
-       x ="chromosome/contig", 
-       y ="peak score by MACS2 (peak FDR)")
+if(homer[FDR<fdr_cutof,.N] > 0) {
+  chr_plot_2 = ggplot(homer[FDR<fdr_cutof], aes(x=new_chr, y=score))+
+    geom_point(data=homer[FDR<fdr_cutof,.(.N,score),by=.(new_chr)][N<2,.(new_chr,score)])+
+    geom_violin(draw_quantiles = c(0.25, 0.5, 0.75))+
+    # geom_jitter(aes(color=FDR<fdr_cutof), width = .4, alpha = .25)+
+    # scale_color_manual(values = c("red", "black"))+
+    geom_hline(yintercept = -10*log10(fdr_cutof), linetype="dashed", colour = "red")+
+    scale_y_continuous(breaks=y_scale, labels=y_scale_labels)+
+    theme(legend.position = "top")+
+    scale_x_discrete(
+      limits=order_chr_types,
+      breaks=order_chr_types,
+      labels=homer[FDR<fdr_cutof, paste0(.BY,"\n#",.N,"\n(",round(.N/homer[FDR<fdr_cutof,.N]*100,2),"%)"), keyby=.(new_chr)][order_chr_types, V1])+
+    labs(title="Plot of (filtered) peaks distribution according to chromosomes/contigs",
+         subtitle=paste0("filter on FDR < ",fdr_cutof), 
+         x ="chromosome/contig", 
+         y ="peak score by MACS2 (peak FDR)")
+} else {
+  chr_plot_2 = ggplot() +
+    theme_void() +
+    geom_text(aes(0,0,label=paste0('Not enough data after using filter FDR<',fdr_cutof,'!'))) +
+    xlab(NULL)
+}
 pdf(paste0(prefix,".chr_types_filt.pdf"), width = 12, height = 9)
 print(chr_plot_2)
 dev.off()

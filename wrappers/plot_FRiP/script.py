@@ -17,7 +17,7 @@ shell.executable("/bin/bash")
 
 version = str(subprocess.Popen("conda list 2>&1 ", shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
 f = open(snakemake.log.run, 'at')
-f.write("## CONDA: "+version+"\n")
+f.write("## CONDA:\n"+version+"\n")
 f.close()
 
 if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) == 0:
@@ -26,9 +26,18 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     f.close()
     pdfkit.from_string('Input file '+snakemake.input.bed+' is missing or empty!', snakemake.output.plot)
     
+    command = "touch "+snakemake.output.counts+" >> "+snakemake.log.run+" 2>&1"
+    f = open(snakemake.log.run, 'at')
+    f.write("## COMMAND: "+command+"\n")
+    f.close()
+    shell(command)
+    
 else:
     extra = ""
-    command = "plotEnrichment -b "+" ".join(snakemake.input.bam)+" --BED "+snakemake.input.bed+" --outRawCounts "+snakemake.output.counts+" -o "+snakemake.output.plot+" --smartLabels --plotTitle 'Fraction of reads in filtered peaks' "+extra+" >> "+snakemake.log.run+" 2>&1"
+    command = "$(which time) plotEnrichment -b "+" ".join(snakemake.input.bam)+\
+              " --BED "+snakemake.input.bed+" --outRawCounts "+snakemake.output.counts+\
+              " -o "+snakemake.output.plot+" --smartLabels --plotTitle 'Fraction of reads in filtered peaks' "+extra+\
+              " >> "+snakemake.log.run+" 2>&1"
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     f.close()

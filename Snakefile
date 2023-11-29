@@ -8,8 +8,10 @@ min_version("5.18.0")
 
 configfile: "config.json"
 
-GLOBAL_REF_PATH = "/mnt/references/"
-GLOBAL_TMPD_PATH = "./tmp/"
+GLOBAL_REF_PATH = config["globalResources"]
+GLOBAL_TMPD_PATH = config["globalTmpdPath"]
+#GLOBAL_REF_PATH = "/mnt/references/"
+#GLOBAL_TMPD_PATH = "./tmp/"
 
 os.makedirs(GLOBAL_TMPD_PATH, exist_ok=True)
 
@@ -32,10 +34,6 @@ os.makedirs(GLOBAL_TMPD_PATH, exist_ok=True)
 # config['bdgdiff_logLR_cutoff'] = ['3']
 # config['bdgdiff_min_len'] = ['200']
 # config['bdgdiff_max_gap'] = ['100']
-# 
-# # Peaks annotation part
-# config['feat_type'] = ['gene']
-# config['annotate_by'] = ['gene_name,gene_id']
 # 
 # # Differential peak calling part
 # config['conditions_to_compare'] = ['ChiP_BY_WT:ChiP_Dtrf4,ChiP_BY_WT:ChiP_Drrp6,ChiP_BY_WT:ChiP_Drai1']
@@ -78,27 +76,36 @@ if not "summary_correlation_method" in config:
   config["summary_correlation_method"] = "spearman"
 if not "feat_type" in config:
   config['feat_type'] = 'gene'
-if not "annotate_by" in config:
-  config['annotate_by'] = 'gene_name,gene_id'
+if not "peak_annot_by" in config:
+  config['peak_annot_by'] = 'gene_name,gene_id'
 if not "UMI" in config:
   config["UMI"] = "no"
 if not "dups" in config:
   config["dups"] = "no_dups"
-# if not "use_groups" in config:
-#   config["use_groups"] = False
 if not "macs_broad_peaks" in config:
   config["macs_broad_peaks"] = False
 if not "macs_broad_cutof" in config:
   config["macs_broad_cutof"] = 0.1
 if not "idr_cutof" in config:
   config['idr_cutof'] = 0.05
+if not "diff_fdr_cutof" in config:
+  config['diff_fdr_cutof'] = 0.05
+if not 'diff_l2fc_cutof' in config:
+  config['diff_l2fc_cutof'] = 0
+if not 'diff_top_dbs' in config:
+  config['diff_top_dbs'] = 10
+# if not 'conds_to_compare' in config:
+#   config['conds_to_compare'] = ['ChiP_BY_WT:ChiP_Dtrf4,ChiP_BY_WT:ChiP_Drrp6,ChiP_BY_WT:ChiP_Drai1']
 
 #### Reference processing ####
 # setting organism from reference
-f = open(os.path.join(GLOBAL_REF_PATH,"reference_info","reference.json"),)
+f = open(os.path.join(GLOBAL_REF_PATH,"reference_info","reference2.json"),)
 reference_dict = json.load(f)
 f.close()
-config["organism"] = [organism_name.lower().replace(" ","_") for organism_name in reference_dict.keys() if isinstance(reference_dict[organism_name],dict) and config["reference"] in reference_dict[organism_name].keys()][0]
+config["species_name"] = [organism_name for organism_name in reference_dict.keys() if isinstance(reference_dict[organism_name],dict) and config["reference"] in reference_dict[organism_name].keys()][0]
+config["organism"] = config["species_name"].split(" (")[0].lower().replace(" ","_")
+if len(config["species_name"].split(" (")) > 1:
+    config["species"] = config["species_name"].split(" (")[1].replace(")","")
 
 ##### Config processing #####
 # Folders
@@ -114,22 +121,11 @@ sample_tab.rename(columns = {0:'control'}, inplace = True)
 sample_tab['control'] = sample_tab.apply(lambda row: 'no_control' if (not row.is_control) & (not row.control) else row.control, axis=1)
 sample_tab['name'] = sample_tab.apply(lambda row: row.condition if row.tag == '' else "_".join([row.condition, row.tag]), axis=1)
 sample_tab['peaks_name'] = sample_tab.apply(lambda row: '' if row['is_control'] else '_VS_'.join([row['name'],row['control']]), axis=1)
-# config["use_groups"] = False
-# sample_tab = pd.DataFrame({'sample_name': ['karpas', 'pfeiffer', 'pfeiffer_ctr'],
-#                             'condition': ['chip', 'chip2', 'ctrl'],
-#                             'tag': ['','','']})
-# if config["use_groups"] == False:
-#   sample_tab['group'] = ""
-# sample_tab['is_control'] = np.where(sample_tab['condition'].isin(["control","ctrl"]), True, False)
-# sample_tab['name'] = sample_tab[["group", "condition"]].apply("_".join, axis=1) if config["use_groups"] else sample_tab['condition']
-# # sample_tab = sample_tab[sample_tab.is_control == False]
-# # sample_tab = sample_tab[sample_tab.group == "karpas"]
-# # print(sample_tab)
-# sample_tab['control'] = sample_tab.apply(lambda row: sample_tab.loc[(sample_tab.group == row.group) & (sample_tab.is_control == True), 'name'].unique(), axis=1)
 print(sample_tab)
 
 #### Setting up the reference gene set ####
-default_reference = GLOBAL_REF_PATH+config['organism']+"/"+config['reference']+"/annot/"+config['reference']+".gtf"
+#default_reference = GLOBAL_REF_PATH+config['organism']+"/"+config['reference']+"/annot/"+config['reference']+".gtf"
+default_reference = os.path.join(GLOBAL_REF_PATH,config['organism'],config['reference'],"annot",config['reference'])+".gtf"
 if 'gene_sets' in config:
     gene_sets = {y[0]:y[1] if y[0] != "all_genes" else default_reference for y in [x.split(':') for x in config['gene_sets'].split(';')]}
 else:
@@ -145,11 +141,9 @@ wildcard_constraints:
 ##### Target rules #####
 
 rule all:
-    # input:  "final_report.html", "dummy"
-    # input: expand("mapped/pseudo/{cond}_rep1.{dups}.bam", cond=sample_tab.condition.unique(), dups=config['dups'])
-    # input: expand("results/MACS_peaks/{name}/{name}.{dups}.peaks.all.narrowPeak", name=[i for i in sample_tab.peaks_name.unique() if i != ''], dups=config['dups'])
-    input: "dummy"
+    input:  "final_report.html"
 
 ##### Modules #####
 
+# include: "rules/prepare_reference.smk"
 include: "rules/peak_calling.smk"
