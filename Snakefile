@@ -40,7 +40,7 @@ os.makedirs(GLOBAL_TMPD_PATH, exist_ok=True)
 # config['dpc_metric'] = ['ratio,total_depth'] # combination of ["max", "ratio", "total_depth"] separated by comma
 
 if not 'macs_padj_filter' in config:
-  config['macs_padj_filter'] = '0.05'
+  config['macs_padj_filter'] = '0.01'
 if not 'filter_blacklist' in config:
   config['filter_blacklist'] = 'yes'
 if not 'top_peaks_neighborhood' in config:
@@ -94,6 +94,10 @@ if not 'diff_l2fc_cutof' in config:
   config['diff_l2fc_cutof'] = 0
 if not 'diff_top_dbs' in config:
   config['diff_top_dbs'] = 10
+if not 'seacr_normalisation' in config:
+  config['seacr_normalisation'] = "norm" # could be 'norm' (to do normalisation of counts between target and control samples) or 'non' (assumes the input data are normalised already based on spike-in genome coverage)
+if not 'seacr_fdr' in config:
+  config['seacr_fdr'] = 0.01 # it's used only if there is no control sample
 # if not 'conds_to_compare' in config:
 #   config['conds_to_compare'] = ['ChiP_BY_WT:ChiP_Dtrf4,ChiP_BY_WT:ChiP_Drrp6,ChiP_BY_WT:ChiP_Drai1']
 

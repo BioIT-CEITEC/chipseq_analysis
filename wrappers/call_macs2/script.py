@@ -27,11 +27,13 @@ else:
   nomodel = "--nomodel --extsize "+str(snakemake.params.frag_len)
 
 input_line = "-t "+" ".join(snakemake.input.trt)
+inputs = snakemake.input.trt
 if hasattr(snakemake.input, 'ctl'):
   input_line += " -c "+" ".join(snakemake.input.ctl)
+  inputs += snakemake.input.ctl
   
 paired = True
-for inp in snakemake.input.trt+snakemake.input.ctl:
+for inp in inputs:
     command = 'samtools view '+inp+' 2>> '+snakemake.log.run+' | head -1 2>> '+snakemake.log.run+' | cut -f 2 2>> '+snakemake.log.run
     # command = 'bc <<< "$(samtools view '+inp+' | head -1 | cut -f 2) % 2"'
     flag = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
@@ -60,7 +62,7 @@ command = "$(which time) macs2 callpeak "+input_line+\
           " "+nomodel+\
           " --bdg"+\
           " --tempdir "+snakemake.params.temp+\
-          " -q 1 >> "+snakemake.log.run+" 2>&1"
+          " -q 0.1 >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
