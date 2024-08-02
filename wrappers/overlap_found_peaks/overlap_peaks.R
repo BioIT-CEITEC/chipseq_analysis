@@ -1,5 +1,9 @@
 library(data.table)
 
+#setwd("/mnt/nfs/shared/S3acgt/sequia/15869__chipseq_analysis__ChIP_peak_calling__231214")
+#c1 = "results/MACS_peaks/H7_M_VS_Ig_M/H7_M_VS_Ig_M.no_dups.peaks.all.narrowPeak"
+#c2 = "results/MACS_peaks/BRD4_R_VS_Ig_R/BRD4_R_VS_Ig_R.no_dups.peaks.all.narrowPeak"
+
 args = commandArgs(trailingOnly = T)
 c1 = args[1]
 c2 = args[2]
@@ -18,8 +22,26 @@ names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qva
 classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
 
 peaks1 = fread(c1, sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
+if(peaks1[,.N]==0) {
+  peaks1 = data.table(matrix(ncol = 10, nrow = 0))
+  names_1 = paste0(names,'_1')
+  colnames(peaks1) = names_1
+  setkeyv(peaks1, names_1[1:3])
+  for(i in seq_along(names_1)) {
+    class(peaks1[[names_1[i]]]) = classes[i]
+  }
+}
 peaks1[,len_1:=end_1-start_1]
 peaks2 = fread(c2, sep = "\t", col.names = paste0(names,"_2"), key = c("chr_2","start_2","end_2"), colClasses = classes)
+if(peaks2[,.N]==0) {
+  peaks2 = data.table(matrix(ncol = 10, nrow = 0))
+  names_2 = paste0(names,'_2')
+  colnames(peaks2) = names_2
+  setkeyv(peaks2, names_2[1:3])
+  for(i in seq_along(names_2)) {
+    class(peaks2[[names_2[i]]]) = classes[i]
+  }
+}
 peaks2[,len_2:=end_2-start_2]
 
 # overlap two sets of identified peaks

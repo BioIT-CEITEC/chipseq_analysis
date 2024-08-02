@@ -36,7 +36,10 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     
     with open(snakemake.log.run, 'at') as f:
         f.write("## NOTE: merging "+snakemake.output.tsv+" with "+snakemake.input.bed+"\n")
-    orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue","summit"])
+    if snakemake.wildcards.tool == "SEACR":
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","summit_cov","summit_pos"])
+    else:
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue","summit"])
     new = pandas.read_csv(snakemake.output.tsv, sep="\t", header=0)
     new.rename(columns={new.columns[0]:"peak_id"}, inplace=True)
     new.rename(columns=lambda s:s.replace(" ","_"), inplace=True)
@@ -44,15 +47,16 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     out.drop(columns=['Chr','Start','End','Strand','Peak_Score'], inplace=True)
     out.to_csv(snakemake.output.tsv, sep="\t", header=True, index=False)
     
-    command = "$(which time) Rscript "+snakemake.params.rscript+\
-              " "+snakemake.output.tsv+\
-              " "+str(snakemake.params.fdr_cutof)+\
-              " "+str(snakemake.params.best)+\
-              " >> "+snakemake.log.run+" 2>&1"
-    f = open(snakemake.log.run, 'at')
-    f.write("## COMMAND: "+command+"\n")
-    f.close()
-    shell(command)
+    if snakemake.wildcards.tool == "MACS":
+      command = "$(which time) Rscript "+snakemake.params.rscript+\
+                " "+snakemake.output.tsv+\
+                " "+str(snakemake.params.fdr_cutof)+\
+                " "+str(snakemake.params.best)+\
+                " >> "+snakemake.log.run+" 2>&1"
+      f = open(snakemake.log.run, 'at')
+      f.write("## COMMAND: "+command+"\n")
+      f.close()
+      shell(command)
     
 else:
     with open(snakemake.log.run, 'at') as f:

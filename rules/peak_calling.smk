@@ -131,7 +131,7 @@ def multiqc_report_inputs(wc):
     else:
         print("No replicates!")
         samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique()]
-    if 'conds_to_compare' in config and config['conds_to_compare'] != "":
+    if 'conds_to_compare' in config and config['conds_to_compare'] != "" and sample_tab.shape[0] > 1:
         inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config['dups'])
     inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
                 sample=sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), #+sample_tab.loc[sample_tab.is_control==False, "condition"].unique(),
@@ -456,18 +456,18 @@ def peaks_summary_inputs(wcs):
     pseudorep = sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "peaks_name"].unique()+".pseudo_reps"
     multirep  = sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "condition"].unique()
     if any(i > 1 for i in sample_tab['num_of_reps']):
-        inputs['bed'] = expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=singlerep, dups=wcs.dups, tool=['MACS']) +\
+        inputs['bed'] = expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=singlerep, dups=wcs.dups, tool=['MACS','SEACR']) +\
              expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=pseudorep, dups=wcs.dups, tool=['MACS']) +\
              expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=multirep, dups=wcs.dups, tool=['MACS','MSPC'])
              # expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=multirep, dups=wcs.dups, tool=['MACS','MSPC','Fisher'])
     else:
-        inputs['bed'] = expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=singlerep, dups=wcs.dups, tool=['MACS'])
+        inputs['bed'] = expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=singlerep, dups=wcs.dups, tool=['MACS','SEACR'])
 
     if any(i > 1 for i in sample_tab['num_of_reps']):
         inputs['frip'] = expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
                             name=[*singlerep,*pseudorep,*multirep], 
                             dups=wcs.dups, 
-                            tool=['MACS'],
+                            tool=['MACS','SEACR'],
                             filt=["filtered","all"]) +\
                          expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
                             name=multirep,  
@@ -478,7 +478,7 @@ def peaks_summary_inputs(wcs):
         inputs['frip'] = expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
                             name=singlerep, 
                             dups=wcs.dups, 
-                            tool=['MACS'],
+                            tool=['MACS','SEACR'],
                             filt=["filtered","all"])
     return inputs
 
@@ -522,7 +522,7 @@ rule peaks_summary:
 rule plot_profile_and_heatmap:
     # input:  unpack(plot_profile_and_heatmap_input),
     input:  mtx = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.mtx.gz",
-    output: heatmap = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.hetamap.pdf",
+    output: heatmap = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.heatmap.pdf",
             profile = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.profile.pdf",
             combined= "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.combined.pdf",
     log:    run = "logs/{name}/plot_profile_and_heatmap.from_{tool}.{dups}.{filt}.over_{gs}.log",
@@ -860,14 +860,14 @@ rule create_tag_dir_by_HOMER:
 #       'peaks': expand("results/MACS_peaks/{name}/{name}.{dups}.consensus_peaks.bed", name=samples, dups=wc.dups)
 #     }
 #     return inputs
-
-rule merge_replicates:
-    # input:  unpack(merge_replicates_inputs)
-    input:  bed = lambda wc: expand("results/MACS_peaks/{cond}/{cond}.{{dups}}.peaks.all.narrowPeak", cond=sample_tab.loc[sample_tab.condition==wc.cond,'peaks_name'].unique()),
-    output: bed = "results/Fisher_peaks/{cond}/{cond}.{dups}.peaks.all.narrowPeak"
-    log:    run = "logs/{cond}.{dups}/merge_replicates.log",
-    conda:  "../wrappers/merge_replicates/env.yaml"
-    script: "../wrappers/merge_replicates/script.py"
+#
+# rule merge_replicates:
+#     # input:  unpack(merge_replicates_inputs)
+#     input:  bed = lambda wc: expand("results/MACS_peaks/{cond}/{cond}.{{dups}}.peaks.all.narrowPeak", cond=sample_tab.loc[sample_tab.condition==wc.cond,'peaks_name'].unique()),
+#     output: bed = "results/Fisher_peaks/{cond}/{cond}.{dups}.peaks.all.narrowPeak"
+#     log:    run = "logs/{cond}.{dups}/merge_replicates.log",
+#     conda:  "../wrappers/merge_replicates/env.yaml"
+#     script: "../wrappers/merge_replicates/script.py"
     
 # https://github.com/ENCODE-DCC/chip-seq-pipeline2
 
@@ -903,6 +903,33 @@ rule call_MSPC:
 #             temp= "/mnt/ssd/ssd_1/tmp/",
 #     conda:  "../wrappers/merge_over_controls/env.yaml"
 #     script: "../wrappers/merge_over_controls/script.py"
+
+
+def call_SEACR_inputs(wc):
+    inputs = {"ref": expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
+    dups = wc.dups
+    samples = wc.name.split('_VS_')
+    inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)[0]
+    if samples[1] != 'no_control':
+      inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)[0]
+    return(inputs)
+
+rule call_SEACR:
+    input: unpack(call_SEACR_inputs),
+    output: tab = "results/SEACR_peaks/{name}/{name}.{dups}.peaks.narrowPeak",
+            tab_all = "results/SEACR_peaks/{name}/{name}.{dups}.peaks.all.narrowPeak",
+            bdg = "results/SEACR_peaks/{name}/{name}.{dups}.peaks.bedgraph",
+            bdg_all = "results/SEACR_peaks/{name}/{name}.{dups}.peaks.all.bedgraph",
+            bwg = "results/SEACR_peaks/{name}/{name}.{dups}.peaks.bigWig",
+            bwg_all = "results/SEACR_peaks/{name}/{name}.{dups}.peaks.all.bigWig",
+    log: "logs/{name}/call_SEACR.{dups}.log",
+    threads: 1
+    params: prefix = "results/SEACR_peaks/{name}/{name}.{dups}",
+            norm = config["seacr_normalisation"],
+            ctl_thr = config["seacr_fdr"],
+            temp = GLOBAL_TMPD_PATH,
+    conda:  "../wrappers/call_SEACR/env.yaml"
+    script: "../wrappers/call_SEACR/script.py"
     
 
 def call_macs2_inputs(wc):
@@ -979,6 +1006,18 @@ rule call_macs2:
 ##########################################
 # PREPARE INPUT
 #
+
+rule convert_bam_to_bedgraph:
+    input:  bam = "{file_name}.bam",
+            ref = expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0],
+    output: bdg = "{file_name}.bedgraph",
+    log:    "logs/{file_name}.bam2bedgraph.log",
+    threads: 2
+    params: max_frag_len = "1000",
+            temp= GLOBAL_TMPD_PATH,
+    conda:  "../wrappers/convert_bam_to_bedgraph/env.yaml"
+    script: "../wrappers/convert_bam_to_bedgraph/script.py"
+
 
 rule prepare_pseudo_reps:
     input:  bam = lambda wc: expand("mapped/{sample}.{{dups}}.bam", sample=sample_tab.loc[sample_tab.condition==wc.cond, 'sample_name'].unique())
