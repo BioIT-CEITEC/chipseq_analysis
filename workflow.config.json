@@ -5,11 +5,22 @@
     "label":"ChIP-seq peak calling",
     "type":"chipseq_analysis",
     "inputs":[
-      "mapped/*"
+      "mapped/*.bam*"
+    ],
+    "inputs_optional":[
+      "gene_sets/*",
+      "qc_reports/*/phantompeakqual/*",
+      "qc_reports/all_samples/deeptools/*",
+      "qc_reports/*/qc_samtools/*"
     ],
     "outputs":[
-      "qc_reports/*",
-      "mapped/*.bam*"
+      "mapped/*",
+      "logs/*",
+      "results/*",
+      "final_report*"
+    ],
+    "outputs_optional":[
+      "gene_sets/*"
     ],
     "report_index": "final_report.html",
     "reports":[
@@ -21,45 +32,57 @@
     "sample_name"
   ],
   "requested_params": [
-    "is_paired",
-    "UMI",
-    "umi_usage",
-    "lib_ROI",
-    "reference",
-    "trim_adapters"
+    "reference"
   ],
   "gui_params" : {
     "primary": {
-      "lib_ROI": {
-        "label": "Regions of interest",
+      "reference": {
+        "label": "Genomic Reference",
         "type": "enum",
-        "default": "wgs",
-        "list": ##INCLUDE:reference_info/lib_ROI.json##
+        "default": ##INCLUDE:reference_info/default_reference.json##,
+        "list": ##INCLUDE:reference_info/reference.json##
+      },
+      "fragment_length": {
+        "label": "Fragment length",
+        "type": "string",
+        "default": "unk"
+      },
+      "effective_genome_size": {
+        "label": "Effective genome size",
+        "type": "string",
+        "default": "unk"
       }
     },
     "detailed": {
-      "count_over": {
-        "label": "Count over",
-        "type": "enum",
-        "default": "exon",
-        "list": {
-          "exon": "Exon",
-          "gene": "Gene",
-          "transcript": "Transcript",
-          "mRNA": "mRNA",
-          "three_prime_utr": "Three prime UTR",
-          "five_prime_utr": "Five prime UTR"
-        }
-      },
-      "max_mapped_reads_to_run_biobloom": {
-        "label": "Biobloom - max mapped ratio",
+      "quality_cutoff": {
+        "label": "Alignment quality cutoff",
         "type": "int",
-        "default": 100
+        "default": 20
       },
-      "use_groups": {
-        "label": "Use different groups",
-        "type": "bool",
-        "default": false
+      "top_peaks": {
+        "label": "Top peaks",
+        "type": "int",
+        "default": 10
+      },
+      "peak_annot_over": {
+        "label": "Annotate peaks over",
+        "type": "string",
+        "default": "gene"
+      },
+      "peak_annot_by": {
+        "label": "Annotate peaks by",
+        "type": "string",
+        "default": "gene_name,gene_id"
+      },
+      "conds_to_compare": {
+        "label": "Conditions to compare",
+        "type": "string",
+        "default": "all"
+      },
+      "gene_sets": {
+        "label": "Genes of interest",
+        "type": "string",
+        "default": "all_genes"
       }
     },
     "samples": {
@@ -68,22 +91,18 @@
         "type": "string",
         "default": ""
       },
-      "group": {
-        "label": "Group",
-        "type": "string",
-        "default": "Gr1",
-        "conditions": {
-          "relevance": {
-            "operand": "equal",
-            "negation": false,
-            "values": {
-              "use_groups": true
-            }
-          }
-        }
+      "is_control": {
+        "label": "Is control?",
+        "type": "bool",
+        "default": false
       },
       "tag": {
-        "label": "Tag",
+        "label": "Replicate",
+        "type": "string",
+        "default": ""
+      },
+      "control": {
+        "label": "Control to use",
         "type": "string",
         "default": ""
       }
