@@ -51,17 +51,11 @@
         "label": "Effective genome size",
         "type": "string",
         "default": "unk"
-      },
-      "effective_genome_size_2": {
-        "label": "Effective genome size",
-        "type": "enum",
-        "default": "2913022398",
-        "list": ##INCLUDE:reference_info/effective_genome_size_reference.json##
       }
     },
     "detailed": {
       "quality_cutoff": {
-        "label": "Bad quality cut-off",
+        "label": "Alignment quality cutoff",
         "type": "int",
         "default": 20
       },
