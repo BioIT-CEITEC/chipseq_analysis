@@ -36,12 +36,6 @@
   ],
   "gui_params" : {
     "primary": {
-      "reference": {
-        "label": "Genomic Reference",
-        "type": "enum",
-        "default": ##INCLUDE:reference_info/default_reference.json##,
-        "list": ##INCLUDE:reference_info/reference.json##
-      },
       "fragment_length": {
         "label": "Fragment length",
         "type": "string",
