@@ -467,13 +467,18 @@ def peaks_summary_inputs(wcs):
         inputs['frip'] = expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
                             name=[*singlerep,*pseudorep,*multirep], 
                             dups=wcs.dups, 
-                            tool=['MACS','SEACR'],
+                            tool=['MACS'],
                             filt=["filtered","all"]) +\
                          expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
                             name=multirep,  
                             dups=wcs.dups, 
                             tool=['MSPC'],
-                            filt=["all"])
+                            filt=["all"]) +\
+                         expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
+                            name=multirep,  
+                            dups=wcs.dups, 
+                            tool=['SEACR'],
+                            filt=["filtered","all"])
     else:
         inputs['frip'] = expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
                             name=singlerep, 
@@ -884,34 +889,25 @@ rule call_MSPC:
             bed = "results/MSPC_peaks/{cond}/{cond}.{dups}.consensusPeaks.txt"
     conda:  "../wrappers/call_MSPC/env.yaml"
     script: "../wrappers/call_MSPC/script.py"
-    
-    
-# def merge_over_controls_inputs(wc):
-#     samples = sample_tab.loc[sample_tab.name==wc.name,'peaks_name'].unique()
-#     print(samples)
-#     inputs = {
-#       'peaks': expand("results/MACS_peaks/{name}/{name}.{dups}.peaks.all.narrowPeak", name=samples, dups=wc.dups)
-#     }
-#     return inputs
-#     
-# rule merge_over_controls:
-#     input:  unpack(merge_over_controls_inputs)
-#     output: bed = "results/MACS_peaks/{name}/{name}.{dups}.consensus_peaks.bed"
-#     log:    run = "logs/{name}/merge_over_controls.{dups}.log",
-#     threads: 1
-#     params: name= "{name}.{dups}",
-#             temp= "/mnt/ssd/ssd_1/tmp/",
-#     conda:  "../wrappers/merge_over_controls/env.yaml"
-#     script: "../wrappers/merge_over_controls/script.py"
 
 
 def call_SEACR_inputs(wc):
     inputs = {"ref": expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
     dups = wc.dups
     samples = wc.name.split('_VS_')
-    inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)[0]
-    if samples[1] != 'no_control':
-      inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)[0]
+    # This case is for doing peak calling on true replicates
+    if len(samples) == 2:
+      # This case is for using specific replicate to call SEACR (with or without control)
+      inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)[0]
+      if samples[1] != 'no_control':
+        inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)[0]
+    else:
+      # This case is for using all reps of one condition to call MACS (with or without control)
+      inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
+      controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
+      controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
+      if any(controls):
+        inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=controls, dups=dups)
     return(inputs)
 
 rule call_SEACR:
