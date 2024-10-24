@@ -903,11 +903,12 @@ def call_SEACR_inputs(wc):
         inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)[0]
     else:
       # This case is for using all reps of one condition to call MACS (with or without control)
-      inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
-      controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
-      controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
-      if any(controls):
-        inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=controls, dups=dups)
+      print("ERROR: SEACR cannot process multi-replicate files!")
+      #inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
+      #controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
+      #controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
+      #if any(controls):
+      #  inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=controls, dups=dups)
     return(inputs)
 
 rule call_SEACR:
