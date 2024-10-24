@@ -475,7 +475,7 @@ def peaks_summary_inputs(wcs):
                             tool=['MSPC'],
                             filt=["all"]) +\
                          expand("results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf", 
-                            name=multirep,  
+                            name=singlerep,  
                             dups=wcs.dups, 
                             tool=['SEACR'],
                             filt=["filtered","all"])
