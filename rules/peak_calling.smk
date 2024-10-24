@@ -123,34 +123,34 @@ from os.path import split
 
 def multiqc_report_inputs(wc):
     inputs = list()
-    inputs+= expand("results/enriched_peaks_summary.{dups}.tsv", dups=config["dups"])
+    inputs+= expand("results/enriched_peaks_summary.{dups}.tsv", dups=config["keep_duplicates"])
     if any(i > 1 for i in sample_tab['num_of_reps']):
-        inputs+= expand("results/reproducible_peaks_summary.{dups}.tsv", dups=config["dups"])
+        inputs+= expand("results/reproducible_peaks_summary.{dups}.tsv", dups=config["keep_duplicates"])
         samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), 
                       *sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "condition"].unique()]
     else:
         print("No replicates!")
         samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique()]
     if 'conds_to_compare' in config and config['conds_to_compare'] != "" and sample_tab.shape[0] > 1:
-        inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config['dups'])
+        inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config["keep_duplicates"])
     inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
                 sample=sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), #+sample_tab.loc[sample_tab.is_control==False, "condition"].unique(),
-                dups=config["dups"])
+                dups=config["keep_duplicates"])
     inputs+= expand("results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.pdf",
                 name=samples,
-                dups=config["dups"],
+                dups=config["keep_duplicates"],
                 tool=["MACS"],
                 filt=["filtered","all"])
     inputs+= expand("results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.combined.pdf",
                 name=samples,
-                dups=config["dups"],
+                dups=config["keep_duplicates"],
                 tool=["MACS"],
                 filt=["filtered","all"],
                 gs=gene_sets.keys())
     inputs+= expand("results/peaks_QC/top_{top}_peak_profiles_by_score/{name}.{dups}.top_peak_profiles.pdf",
                 name=samples,
                 top=config["top_peaks"],
-                dups=config["dups"])
+                dups=config["keep_duplicates"])
     return inputs
 
 rule multiqc_report:
@@ -893,6 +893,7 @@ rule call_MSPC:
 
 def call_SEACR_inputs(wc):
     inputs = {"ref": expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
+    # inputs = {"ref": config["organism_chr_sizes"]}
     dups = wc.dups
     samples = wc.name.split('_VS_')
     # This case is for doing peak calling on true replicates
@@ -932,6 +933,7 @@ rule call_SEACR:
 def call_macs2_inputs(wc):
     inputs = {"ref": expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
     dups = wc.dups
+    ext = 'bedgraph' if config['spikein'] else 'bam'
     samples = wc.name.split('_VS_')
     suffix = '.pseudo_reps'
     if wc.name.endswith(suffix):
@@ -955,9 +957,9 @@ def call_macs2_inputs(wc):
       # This case is for doing peak calling on true replicates
       if len(samples) == 2:
         # This case is for using specific replicate to call MACS (with or without control)
-        inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
+        inputs["trt"] = expand("mapped/{sample}.{dups}.{ext}", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups, ext=ext)
         if samples[1] != 'no_control':
-          inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
+          inputs['ctl'] = expand("mapped/{sample}.{dups}.{ext}", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups, ext=ext)
       else:
         # This case is for using all reps of one condition to call MACS (with or without control)
         inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
@@ -1003,15 +1005,21 @@ rule call_macs2:
 ##########################################
 # PREPARE INPUT
 #
+def convert_bam_to_bedgraph_inputs(wcs):
+  inputs = {'ref': expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
+  # inputs = {'ref': config["organism_chr_sizes"]}
+  inputs['bam'] = "{wcs.file_name}.bam"
+  if config['spikein']:
+    inputs['sbam'] = "{wcs.file_name}.spike.bam"
 
 rule convert_bam_to_bedgraph:
-    input:  bam = "{file_name}.bam",
-            ref = expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0],
+    input:  unpack(convert_bam_to_bedgraph_inputs)
     output: bdg = "{file_name}.bedgraph",
     log:    "logs/{file_name}.bam2bedgraph.log",
     threads: 2
-    params: max_frag_len = "1000",
-            temp= GLOBAL_TMPD_PATH,
+    params: temp= GLOBAL_TMPD_PATH,
+            spikein = config['spikein'],
+            scalefac = config['spike_scale_factor'],
     conda:  "../wrappers/convert_bam_to_bedgraph/env.yaml"
     script: "../wrappers/convert_bam_to_bedgraph/script.py"
 

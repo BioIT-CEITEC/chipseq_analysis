@@ -32,7 +32,10 @@
     "sample_name"
   ],
   "requested_params": [
-    "reference"
+    "organism",
+    "assembly",
+    "release",
+    "protocol"
   ],
   "gui_params" : {
     "primary": {
@@ -51,13 +54,45 @@
         "label": "Effective genome size",
         "type": "string",
         "default": "unk"
+      },
+      "spikein": {
+        "label": "Use spike-in normalization",
+        "type": "bool",
+        "default": false,
+        "conditions": {
+          "value": {
+            "protocol": {
+              "chipseq": false,
+              "car": true
+      },
+      "spike_scale_factor": {
+        "label": "Spike-in norm scale factor",
+        "type": "int",
+        "default": 1,
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "spikein": true
+            }
+          }
+        }
       }
     },
     "detailed": {
-      "quality_cutoff": {
-        "label": "Alignment quality cutoff",
-        "type": "int",
-        "default": 20
+      "keep_duplicates": {
+        "label": "Keep all duplicates",
+        "type": "bool",
+        "default": false,
+        "conditions": {
+          "value": {
+            "protocol": {
+              "chipseq": false,
+              "car": true
+            }
+          }
+        }
       },
       "top_peaks": {
         "label": "Top peaks",

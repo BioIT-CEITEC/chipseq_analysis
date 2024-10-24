@@ -80,8 +80,8 @@ if not "peak_annot_by" in config:
   config['peak_annot_by'] = 'gene_name,gene_id'
 if not "UMI" in config:
   config["UMI"] = "no"
-if not "dups" in config:
-  config["dups"] = "no_dups"
+if not "keep_duplicates" in config:
+  config["keep_duplicates"] = "no_dups"
 if not "macs_broad_peaks" in config:
   config["macs_broad_peaks"] = False
 if not "macs_broad_cutof" in config:
@@ -100,6 +100,13 @@ if not 'seacr_fdr' in config:
   config['seacr_fdr'] = 0.01 # it's used only if there is no control sample
 # if not 'conds_to_compare' in config:
 #   config['conds_to_compare'] = ['ChiP_BY_WT:ChiP_Dtrf4,ChiP_BY_WT:ChiP_Drrp6,ChiP_BY_WT:ChiP_Drai1']
+if not 'spikein' in config:
+  config['spikein'] = False
+if not 'spike_scale_factor' in config:
+  config['spike_scale_factor'] = 1
+  
+if config['spikein']:
+  config['seacr_normalisation'] = "non"
 
 #### Reference processing ####
 # setting organism from reference
