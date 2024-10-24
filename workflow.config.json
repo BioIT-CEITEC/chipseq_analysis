@@ -64,6 +64,9 @@
             "protocol": {
               "chipseq": false,
               "car": true
+            }
+          }
+        }
       },
       "spike_scale_factor": {
         "label": "Spike-in norm scale factor",
