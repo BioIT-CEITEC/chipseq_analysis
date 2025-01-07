@@ -56,8 +56,8 @@ print(gene_sets)
 
 #### Setting up wildcard constraints ####
 wildcard_constraints:
-     # sample = "|".join(sample_tab.sample_name) + "|all_samples",
-     dups="no_dups|keep_dups"
+    # sample = "|".join(sample_tab.sample_name) + "|all_samples",
+    dups="no_dups|keep_dups"
 
 ##### Target rules #####
 
