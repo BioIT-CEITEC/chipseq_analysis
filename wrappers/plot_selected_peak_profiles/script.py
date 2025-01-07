@@ -22,7 +22,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) == 0:
+if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
     f = open(snakemake.log.run, 'at')
     f.write("## WARNING: Input file "+snakemake.input.bed+" is missing or empty\n")
     f.close()

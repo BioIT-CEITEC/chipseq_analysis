@@ -1,17 +1,18 @@
 {
   "workflow_description": {
     "name":"chipseq_analysis",
-    "version": 1.0,
-    "label":"ChIP-seq peak calling",
+    "version": 2.0,
+    "label":"ChIP/CnR peak calling",
     "type":"chipseq_analysis",
     "inputs":[
-      "mapped/*.bam*"
+      "mapped/*_dups.bam*"
     ],
     "inputs_optional":[
       "gene_sets/*",
       "qc_reports/*/phantompeakqual/*",
       "qc_reports/all_samples/deeptools/*",
-      "qc_reports/*/qc_samtools/*"
+      "qc_reports/*/qc_samtools/*",
+      "mapped/*spike.bam*"
     ],
     "outputs":[
       "mapped/*",
@@ -39,24 +40,40 @@
   ],
   "gui_params" : {
     "primary": {
-      "reference": {
-        "label": "Genomic Reference",
+      "organism": {
+        "label": "Organism",
         "type": "enum",
-        "default": ##INCLUDE:reference_info/default_reference.json##,
-        "list": ##INCLUDE:reference_info/reference.json##
+        "dynamicEnumName": "organism"
       },
-      "fragment_length": {
-        "label": "Fragment length",
-        "type": "string",
-        "default": "unk"
+      "assembly": {
+        "label": "Genomic Reference Assembly",
+        "type": "enum",
+        "dynamicEnumName": "assembly",
+        "filters": {
+          "group": {
+            "param": "organism",
+            "type": "value",
+            "showGroupLabel": false
+          }
+        }
       },
-      "effective_genome_size": {
-        "label": "Effective genome size",
-        "type": "string",
-        "default": "unk"
+      "release": {
+        "type": "constant",
+        "default": "UNK_UNK"
+      },
+      "protocol": {
+        "label": "Library preparation",
+        "info": "Select the library preparation protocol to help configure some default values.",
+        "type": "enum",
+        "default": "chipseq",
+        "list": {
+          "chipseq": "ChIP-seq",
+          "car": "Cut&Run"
+        }
       },
       "spikein": {
         "label": "Use spike-in normalization",
+        "info": "Decide, if to do aditional alignment to E. coli spike-in genome. It's used in downstream analysis for explicit normalisation of samples.",
         "type": "bool",
         "default": false,
         "conditions": {
@@ -69,9 +86,10 @@
         }
       },
       "spike_scale_factor": {
-        "label": "Spike-in norm scale factor",
+        "label": "Spike-in scale factor",
+        "info": "During spike-in normalisation, the primary read counts (mapped to selected genomic reference) are normalised according to the the spike-in read counts (mapped to the spike-in genome) as the primary genome to spike-in genome ratio per cell is expected to be the same for all samples. However, these 2 numbers usually differ by several orders of magnitude so the spike-in scale factor should be arbitrary large number to scale the ratio coefficient.",
         "type": "int",
-        "default": 1,
+        "default": 10000,
         "conditions": {
           "relevance": {
             "operand": "equal",
@@ -81,11 +99,10 @@
             }
           }
         }
-      }
-    },
-    "detailed": {
+      },
       "keep_duplicates": {
         "label": "Keep all duplicates",
+        "info": "In ChIP-seq analysis, it is recommended to remove all duplicates (because of the randomness in fragmentation during library preparation) while in Cut&Run analysis it's not necessary (depending on the library size and targeted region).",
         "type": "bool",
         "default": false,
         "conditions": {
@@ -96,31 +113,233 @@
             }
           }
         }
+      }
+    },
+    "detailed": {
+      "effective_genome_size": {
+        "label": "Effective genome size (MACS)",
+        "info": "Effective genome size is defined as the length of the “mappable” genome and is used to correct for the loss of true signals in low-mappable regions. It's used in MACS tool. We strongly suggest using the value from https://test-argparse-readoc.readthedocs.io/en/latest/content/feature/effectiveGenomeSize.html where possible.",
+        "type": "string",
+        "default": "unk"
+      },
+      "fragment_length": {
+        "label": "Fragment length (MACS)",
+        "info": "Explicit value to be used for peak calling in MACS. Use only integers or 'unk' string. 'unk' forces MACS to compute the proper value by investigating the reads.",
+        "type": "string",
+        "default": "unk"
+      },
+      "macs_broad_peaks": {
+        "label": "Call broad peaks (MACS)",
+        "info": "Broad peaks are useful mainly for investigating histones function. By default, MACS calls narrow peaks used to investigate TFs or pol II.",
+        "type": "bool",
+        "default": false
+      },
+      "macs_broad_cutof": {
+        "label": "Set broad peaks cut-off (MACS)",
+        "info": "Broad peaks usually have lesser coverage. Therefore, it might be useful to lower FDR cut-off. Use only real numbers between 0 and 1.",
+        "type": "string",
+        "default": "0.1",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "macs_broad_peaks": true
+            }
+          }
+        }
+      },
+      "macs_padj_filter": {
+        "label": "Set narrow peaks bottom cut-off (MACS)",
+        "info": "Bottom FDR cut-off is there to filter out many possible irrelevant peaks as MACS is very sensitive. To see really all the peaks set this to 0. There is also default hard-coded FDR cut-off 0.05 used in report. Use only real numbers between 0 and 1.",
+        "type": "string",
+        "default": "0.01",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "macs_broad_peaks": false
+            }
+          }
+        }
+      },
+      "seacr_normalisation": {
+        "label": "Normalisation of control (SEACR)",
+        "info": "Normalisation of control to target sample in SEACR could be turned off. This is recommended if using spike-in normalisation or if control sample is missing.",
+        "type": "enum",
+        "default": "norm",
+        "list": {
+          "norm": "Yes",
+          "non": "No"
+        },
+        "conditions": {
+          "value": {
+            "spikein": {
+              "true": "non",
+              "false": "norm"
+            }
+          }
+        }
+      },
+      "seacr_fdr": {
+        "label": "Set peaks FDR cutof (SEACR)",
+        "info": "This value is used only in case there is no control sample. Use only real number between 0 and 1. Keep in mind to turn Normalisation of control to off.",
+        "type": "string",
+        "default": "0.01"
+      },
+      "idr_cutof": {
+        "label": "Reproducibility FDR cut-off (IDR)",
+        "info": "This value is used as artificial FDR cut-off to decide about peaks significancy in bdgdiff tool. Use only real number between 0 and 1.",
+        "type": "string",
+        "default": "0.05"
+      },
+      "do_dba": {
+        "label": "Compare samples in DBA",
+        "info": "DBA stands for differential binding analysis (i.e., comparison of called peaks between different target samples). It's done using various tools (DiffBind, bdgdiff, simple overlap) because none of them supports all peak calling tool results, except naive approach (simple overlap).",
+        "type": "bool",
+        "default": false
+      },
+      "conds_to_compare": {
+        "label": "Targets for DBA",
+        "info": "To do DBA you need to specify targets to compare using proper sample names (except control samples) as follows: 'sample_name_X:sample_name_Y'. You can select multiple comparisons separated using semi-colon (;). Or you can use 'all' (wild-card meaning to do all the possible combinations of sample names; this might take too much time and create lots of unnecessary data).",
+        "type": "string",
+        "default": "",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
+      },
+      "bdgdiff_logLR_cutoff": {
+        "label": "logLR cut-off (bdgdiff)",
+        "info": "This is log likelihood ratio cut-off used in bdgdiff tool to narrow down results of DBA. Use only positive real numbers >= 0.",
+        "type": "string",
+        "default": "3",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
+      },
+      "bdgdiff_min_len": {
+        "label": "Min length (bdgdiff)",
+        "info": "This is minimum length cut-off used in bdgdiff tool to constrain differential regions (i.e., peaks) and therefore narrow down the results of DBA. Try bigger value to remove small regions.",
+        "type": "int",
+        "default": "200",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
+      },
+      "bdgdiff_max_gap": {
+        "label": "Max gap (bdgdiff)",
+        "info": "This is maximum gap used in bdgdiff tool to merge nearby differential regions (i.e., peaks) and therefore narrow down the results of DBA. Consider a wider gap for broad peaks. Maximum gap should be smaller than minimum length.",
+        "type": "int",
+        "default": "100",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
+      },
+      "diff_fdr_cutof": {
+        "label": "FDR cut-off (DiffBind)",
+        "info": "This value is used as artificial FDR cut-off to decide about differential regions (i.e., peaks) significancy in DiffBind tool. Use only real number between 0 and 1.",
+        "type": "string",
+        "default": "0.05",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
+      },
+      "diff_l2fc_cutof": {
+        "label": "Log2FC cut-off (DiffBind)",
+        "info": "This value is used to constrain minimum fold change between differential regions (i.e., peaks) in DiffBind tool. Use real numbers >= 0. Using 0 effectively turn off this cut-off.",
+        "type": "string",
+        "default": "0",
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
+      },
+      "diff_top_dbs": {
+        "label": "Top results (DiffBind)",
+        "info": "Top X differential regions (i.e., peaks) discovered by DiffBind tool reported in results.",
+        "type": "int",
+        "default": 10,
+        "conditions": {
+          "relevance": {
+            "operand": "equal",
+            "negation": false,
+            "values": {
+              "do_dba": true
+            }
+          }
+        }
       },
       "top_peaks": {
         "label": "Top peaks",
+        "info": "Number of peaks used to create individual coverage profiles.",
         "type": "int",
-        "default": 10
+        "default": 20
       },
-      "peak_annot_over": {
+      "top_peaks_neighborhood": {
+        "label": "Peaks body extension",
+        "info": "Number of bps up/down-stream of peaks body to make some profiles and heatmaps.",
+        "type": "int",
+        "default": 200
+      },
+      "peak_profiles_radius": {
+        "label": "Average peak radius",
+        "info": "Number of bps up/down-stream from center of peaks.",
+        "type": "int",
+        "default": 200
+      },
+      "gene_sets": {
+        "label": "Genes of interest",
+        "info": "Part of the results is a set of profile plots showing the average signal close to specified set of genes. This could be 'all_genes' (by default) meaning the total set of genes in the genomic reference annotation or a named list of genes using gene names separated by comma (e.g., 'my_list_name:FOXO1,FOXO2,FOXO3'), or a named list of genes from file (in format GTF, GFF, BED, BED12 or list of items, e.g., 'positive_control:my_list_of_genes.bed'). However, this file must be uploaded manually by a BioIT facility member. You can specify multiple lists separated by semi-colon (;), e.g., 'all_genes;positive_control:FOXO1,FOXO2;genes_of_interest:possibly_affected_genes.list'.",
+        "type": "string",
+        "default": "all_genes"
+      },
+      "feat_type": {
         "label": "Annotate peaks over",
+        "info": "There are two ways of annotating peaks. One is automatic (using HOMER) which works for called peaks (results of MACS, SEACR, etc.). Otherwise, we use manual annotation against the genomic reference annotation (i.e., after differential binding analysis) and here you can decide which genomic feature is considered (e.g., 'gene', 'transcript', 'exon', etc.). By default it's 'gene'.",
         "type": "string",
         "default": "gene"
       },
       "peak_annot_by": {
         "label": "Annotate peaks by",
+        "info": "There are two ways of annotating peaks. One is automatic (using HOMER) which works for called peaks (results of MACS, SEACR, etc.). Otherwise, we use manual annotation against the genomic reference annotation (i.e., after differential binding analysis) and here you can decide which key is used to describe the selected genomic feature (e.g., 'gene_name', 'gene_id', 'exon_id', etc.). You can select multiple keys separated by comma. By default it's 'gene_name,gene_id'.",
         "type": "string",
         "default": "gene_name,gene_id"
-      },
-      "conds_to_compare": {
-        "label": "Conditions to compare",
-        "type": "string",
-        "default": "all"
-      },
-      "gene_sets": {
-        "label": "Genes of interest",
-        "type": "string",
-        "default": "all_genes"
       }
     },
     "samples": {

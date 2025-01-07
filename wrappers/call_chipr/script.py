@@ -1,5 +1,5 @@
 #########################################
-# wrapper for rule: call_IDR
+# wrapper for rule: call_chipr
 #########################################
 import os
 import sys
@@ -9,7 +9,7 @@ import re
 from snakemake.shell import shell
 
 f = open(snakemake.log.run, 'a+')
-f.write("\n##\n## RULE: call_IDR \n##\n")
+f.write("\n##\n## RULE: call_chipr \n##\n")
 f.close()
 
 shell.executable("/bin/bash")
@@ -22,7 +22,7 @@ f.close()
 command = "(time chipr --input "+" ".join(snakemake.input.peaks)+\
           " --minentries "+str(snakemake.params.minentries)+\
           " --size "+str(snakemake.params.minsize)+\
-          " --rankmethod qvalue"+\
+          " --rankmethod score"+\
           " --output "+snakemake.params.prefix+\
           " ) >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')

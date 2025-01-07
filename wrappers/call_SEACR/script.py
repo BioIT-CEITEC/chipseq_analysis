@@ -73,14 +73,19 @@ f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
-# bedGraphToBigWig ${i} /mnt/ssd/ssd_3/references/saccharomyces_cerevisiae/R64-1-1.100/seq/chrom.sizes ${i%.bdg}.bigWig
-command = "$(which time) bedGraphToBigWig "+snakemake.output.bdg_all+" "+snakemake.input.ref+" "+snakemake.output.bwg_all+" >> "+log_filename+" 2>&1"
+if os.path.isfile(snakemake.output.bdg_all) and sum(1 for line in open(snakemake.output.bdg_all, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
+  command = "$(which time) bedGraphToBigWig "+snakemake.output.bdg_all+" "+snakemake.input.ref+" "+snakemake.output.bwg_all+" >> "+log_filename+" 2>&1"
+else:
+  command = "touch "+snakemake.output.bwg_all+" >> "+log_filename+" 2>&1"
 f = open(log_filename, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
-command = "$(which time) bedGraphToBigWig "+snakemake.output.bdg+" "+snakemake.input.ref+" "+snakemake.output.bwg+" >> "+log_filename+" 2>&1"
+if os.path.isfile(snakemake.output.bdg) and sum(1 for line in open(snakemake.output.bdg, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
+  command = "$(which time) bedGraphToBigWig "+snakemake.output.bdg+" "+snakemake.input.ref+" "+snakemake.output.bwg+" >> "+log_filename+" 2>&1"
+else:
+  command = "touch "+snakemake.output.bwg+" >> "+log_filename+" 2>&1"  
 f = open(log_filename, 'at')
 f.write("## COMMAND: "+command+"\n")
 f.close()

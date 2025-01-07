@@ -20,7 +20,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA: "+version+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.peaks) and os.path.getsize(snakemake.input.peaks) > 0:
+if os.path.isfile(snakemake.input.peaks) and sum(1 for line in open(snakemake.input.peaks, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
   command = "(time Rscript "+snakemake.params.rscript+\
             " "+snakemake.params.odir+\
             " "+snakemake.params.prefix+\

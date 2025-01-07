@@ -24,11 +24,11 @@ for(bed in beds) {
   name = basename(bed)
   comp = tstrsplit(path,"/")[[3]]
   source = tstrsplit(path,"/")[[2]]
-  if(source == 'overlapped_peaks') {
-    source = ifelse(grepl('by_MACS', name), "MACS_overlap", "MSPC_overlap")
-    total = as.numeric(btab[,2])
-    up = as.numeric(btab[,6])
-    down = as.numeric(btab[,7])
+  if(source == 'overlapped_peaks' || source == 'merged_peaks') {
+    source = paste0(btab$tool,"_",source) #ifelse(grepl('by_MACS', name), "MACS_overlap", "MSPC_overlap")
+    total = as.numeric(btab$merged_peaks)
+    up = as.numeric(btab$cond1_signif)
+    down = as.numeric(btab$cond2_signif)
     sig = up+down
   }
   if(source == 'MACS_bdgdiff') {

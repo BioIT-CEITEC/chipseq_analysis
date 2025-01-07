@@ -21,9 +21,9 @@ l2fc_cutof= as.numeric(args[11])
 names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qval", "rel_summit_pos") # rsp = relative summit position
 classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
 
-peaks1 = fread(c1, sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
+peaks1 = fread(cmd = paste0("cut -f 1-",length(names)," ",c1), sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
 if(peaks1[,.N]==0) {
-  peaks1 = data.table(matrix(ncol = 10, nrow = 0))
+  peaks1 = data.table(matrix(ncol = length(names), nrow = 0))
   names_1 = paste0(names,'_1')
   colnames(peaks1) = names_1
   setkeyv(peaks1, names_1[1:3])
@@ -32,9 +32,9 @@ if(peaks1[,.N]==0) {
   }
 }
 peaks1[,len_1:=end_1-start_1]
-peaks2 = fread(c2, sep = "\t", col.names = paste0(names,"_2"), key = c("chr_2","start_2","end_2"), colClasses = classes)
+peaks2 = fread(cmd = paste0("cut -f 1-",length(names)," ",c2), sep = "\t", col.names = paste0(names,"_2"), key = c("chr_2","start_2","end_2"), colClasses = classes)
 if(peaks2[,.N]==0) {
-  peaks2 = data.table(matrix(ncol = 10, nrow = 0))
+  peaks2 = data.table(matrix(ncol = length(names), nrow = 0))
   names_2 = paste0(names,'_2')
   colnames(peaks2) = names_2
   setkeyv(peaks2, names_2[1:3])
@@ -65,12 +65,18 @@ fwrite(overlapped2[is.na(name_1), .(chr,start=start_2,end=end_2,name=name_2,scor
        quote = F)
 
 sum_tab = data.table(comparison = comparison)
-sum_tab[,eval(paste0(tool,"_total")) := overlapped1[,.N]+overlapped2[is.na(name_1),.N]]
-sum_tab[,eval(paste0(tool,"_up")) := overlapped1[is.na(name_2), .N]]
-sum_tab[,eval(paste0(tool,"_dn")) := overlapped2[is.na(name_1), .N]]
-sum_tab[,eval(paste0(tool,"_overlap")) := overlapped1[!is.na(name_1) & !is.na(name_2), .N]]
-sum_tab[,eval(paste0(tool,"_sig_up")) := overlapped1[is.na(name_2) & qval_1 > -log10(fdr_cutof), .N]]
-sum_tab[,eval(paste0(tool,"_sig_dn")) := overlapped2[is.na(name_1) & qval_2 > -log10(fdr_cutof), .N]]
+sum_tab[,tool := tool]
+sum_tab[,merged_peaks := overlapped1[,.N]+overlapped2[is.na(name_1),.N]]
+sum_tab[,cond1_unique := overlapped1[is.na(name_2), .N]]
+sum_tab[,cond2_unique := overlapped2[is.na(name_1), .N]]
+sum_tab[,overlap_peaks := overlapped1[!is.na(name_1) & !is.na(name_2), .N]]
+if(tool == "SEACR") {
+  sum_tab[,cond1_signif := overlapped1[is.na(name_2), .N]]
+  sum_tab[,cond2_signif := overlapped2[is.na(name_1), .N]]
+} else {
+  sum_tab[,cond1_signif := overlapped1[is.na(name_2) & qval_1 > -log10(fdr_cutof), .N]]
+  sum_tab[,cond2_signif := overlapped2[is.na(name_1) & qval_2 > -log10(fdr_cutof), .N]]
+}
 
 overlapped = overlapped1[!is.na(name_1)&!is.na(name_2)]
 # compute overlap length and its percentage  against the combined length of both peaks divided by 2
@@ -78,11 +84,18 @@ overlapped[ ,overlap_len:=ifelse(end_1<end_2,end_1,end_2)-ifelse(start_1>start_2
 overlapped[ ,overlap_perc:=round(overlap_len/((len_1+len_2)*0.5),4) ]
 overlapped[ ,overlap_l2fc:=ifelse(l2fc_1<l2fc_2, l2fc_2, l2fc_1)]
 # overlapped[ ,overlap_pval:=10^-sum(pval_1,pval_2)]
-overlapped[ ,overlap_pval:=pchisq(-2*sum(log(10^-c(pval_1,pval_2))), 4, lower.tail=FALSE), by=seq_along(chr)]
-overlapped[ ,overlap_FDR:=p.adjust(overlap_pval, method = "fdr")]
-overlapped[ ,overlap_qval:=-log10(overlap_FDR)]
-overlapped[ ,overlap_score:=floor(10*overlap_qval)]
-# add number of sginificant overlapped peaks into summary file and write it down
+if(tool == "SEACR") {
+  overlapped[ ,overlap_pval:=0, by=seq_along(chr)]
+  overlapped[ ,overlap_FDR:= 0, by=seq_along(chr)]
+  overlapped[ ,overlap_qval:=0, by=seq_along(chr)]
+  overlapped[ ,overlap_score:=ifelse(score_1>score_2, score_1, score_2)]
+} else {
+  overlapped[ ,overlap_pval:=pchisq(-2*sum(log(10^-c(pval_1,pval_2))), 4, lower.tail=FALSE), by=seq_along(chr)]
+  overlapped[ ,overlap_FDR:=p.adjust(overlap_pval, method = "fdr")]
+  overlapped[ ,overlap_qval:=-log10(overlap_FDR)]
+  overlapped[ ,overlap_score:=floor(10*overlap_qval)]
+}
+# add number of significant overlapped peaks into summary file and write it down
 sum_tab[,eval(paste0(tool,"_sig_overlap")) := overlapped[overlap_FDR < fdr_cutof, .N]]
 fwrite(sum_tab, out_sum_tab, sep = '\t', row.names = F, col.names = T)
 

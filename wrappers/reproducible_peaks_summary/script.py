@@ -45,7 +45,7 @@ for bed in snakemake.input.bed:
     if '_VS_' in name[1]:
       comp = re.findall('\w+\.(rep\d+_VS_rep\d+)\.\w+',name[1])
       # print(comp)
-    if os.path.isfile(bed) and os.path.getsize(bed) > 0:
+    if os.path.isfile(bed) and sum(1 for line in open(bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
         tab = pd.read_table(bed, sep="\t")
         cols['condition'].append(cond)
         cols['comparison'].append(comp)
@@ -71,7 +71,7 @@ df = pd.DataFrame(data=cols).sort_values(by = 'condition')
 df.to_csv(snakemake.output.tab, sep="\t", header = True, index = False)
         
 
-# if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) > 0:
+# if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
 #     command = "Rscript "+snakemake.params.rscript+" "+snakemake.input.bed+" "+snakemake.input.gtf+" "+snakemake.output.bed+" "+snakemake.params.feat_type+" "+snakemake.params.annotate_by+" >> "+snakemake.log.run+" 2>&1"
 #     f = open(snakemake.log.run, 'at')
 #     f.write("## COMMAND: "+command+"\n")
