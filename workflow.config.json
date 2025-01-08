@@ -184,7 +184,7 @@
       },
       "seacr_fdr": {
         "label": "Set peaks FDR cutof (SEACR)",
-        "info": "This value is used only in case there is no control sample. Use only real number between 0 and 1. Keep in mind to turn Normalisation of control to off.",
+        "info": "This value is used only in case there is no control sample. Use only real number between 0 and 1. Keep in mind to turn off Normalisation of control in this case.",
         "type": "string",
         "default": "0.01"
       },
@@ -217,7 +217,7 @@
       },
       "bdgdiff_logLR_cutoff": {
         "label": "logLR cut-off (bdgdiff)",
-        "info": "This is log likelihood ratio cut-off used in bdgdiff tool to narrow down results of DBA. Use only positive real numbers >= 0.",
+        "info": "This is log likelihood ratio cut-off used in bdgdiff tool to narrow down results of DBA. Use only real numbers >= 0.",
         "type": "string",
         "default": "3",
         "conditions": {
