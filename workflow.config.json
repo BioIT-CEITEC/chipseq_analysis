@@ -234,7 +234,7 @@
         "label": "Min length (bdgdiff)",
         "info": "This is minimum length cut-off used in bdgdiff tool to constrain differential regions (i.e., peaks) and therefore narrow down the results of DBA. Try bigger value to remove small regions.",
         "type": "int",
-        "default": "200",
+        "default": 200,
         "conditions": {
           "relevance": {
             "operand": "equal",
@@ -249,7 +249,7 @@
         "label": "Max gap (bdgdiff)",
         "info": "This is maximum gap used in bdgdiff tool to merge nearby differential regions (i.e., peaks) and therefore narrow down the results of DBA. Consider a wider gap for broad peaks. Maximum gap should be smaller than minimum length.",
         "type": "int",
-        "default": "100",
+        "default": 100,
         "conditions": {
           "relevance": {
             "operand": "equal",
