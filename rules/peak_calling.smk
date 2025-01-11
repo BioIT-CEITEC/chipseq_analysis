@@ -506,9 +506,9 @@ def plot_average_peak_profile_inputs(wc):
     inputs= dict()
     inputs['bwg'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.bigWig"
     if wc.filt == "all":
-      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.summits.all.bed"
+      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.all.narrowPeak"
     else:
-      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.summits.bed"
+      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.narrowPeak"
     return inputs
 
 rule plot_average_peak_profile:
@@ -541,6 +541,7 @@ def plot_FRiP_inputs(wc):
     if not '_VS_' in wc.name:
       samples = sample_tab.loc[sample_tab['condition'] == wc.name, "sample_name"].unique()
   inputs['bam'] = expand("mapped/{sample}.{dups}.bam", sample=samples, dups=wc.dups)
+  inputs['bai'] = expand("mapped/{sample}.{dups}.bam.bai", sample=samples, dups=wc.dups)
   if wc.filt == "all":
     inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.all.narrowPeak"
   else:
@@ -950,6 +951,13 @@ rule convert_bam_to_bedgraph:
     conda:  "../wrappers/convert_bam_to_bedgraph/env.yaml"
     script: "../wrappers/convert_bam_to_bedgraph/script.py"
 
+
+rule index_bam:
+    input:  "mapped/{file}.bam",
+    output: "mapped/{file}.bam.bai",
+    conda:  "../wrappers/call_macs2/env.yaml"
+    shell: "samtools index {input}"
+    
 
 rule prepare_pseudo_reps:
     input:  bam = lambda wc: expand("mapped/{sample}.{{dups}}.bam", sample=sample_tab.loc[sample_tab.condition==wc.cond, 'sample_name'].unique())

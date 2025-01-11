@@ -21,7 +21,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
+if not os.path.isfile(snakemake.input.bed) or sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) == 0:
     f = open(snakemake.log.run, 'at')
     f.write("## WARNING: Input file "+snakemake.input.bed+" is missing or empty\n")
     f.close()
@@ -42,7 +42,7 @@ if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.inpu
     shell(command)
 
 else:
-    extra = "--sortRegions keep"
+    extra = "--sortRegions keep --referencePoint center"
     if "skip_zeros" in snakemake.params and snakemake.params.skip_zeros:
         extra = extra+" --skipZeros"
     title = snakemake.params.title+" ("+snakemake.wildcards.filt+")"

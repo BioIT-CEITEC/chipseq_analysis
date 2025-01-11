@@ -135,8 +135,8 @@ if snakemake.params.spikein:
       f = open(snakemake.log.run, 'at')
       f.write("## COMMAND: "+command+"\n")
       genome_len = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-      f.write("## INFO: total genome length: "+genome_len+"\n")
-      scaling_bg = round(float(total_len)/int(genome_len), 8)
+      f.write("## INFO: total genome length: "+str(genome_len)+"\n")
+      scaling_bg = round(float(total_len)/float(genome_len), 8)
       f.write("## INFO: genome background factor: "+str(total_len)+"/"+str(genome_len)+"="+str(scaling_bg)+"\n")
       f.close()
       # Combination of all backgrounds and normalisation
