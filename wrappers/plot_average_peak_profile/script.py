@@ -47,7 +47,7 @@ else:
         extra = extra+" --skipZeros"
     title = snakemake.params.title+" ("+snakemake.wildcards.filt+")"
 
-    command = "computeMatrix reference-point -S "+snakemake.input.bwg+" -R "+snakemake.input.bed+" -o "+snakemake.params.mtx+" "+extra+" --samplesLabel "+snakemake.params.sample_name+" -a "+str(snakemake.params.after)+" -b "+str(snakemake.params.before)+" -p "+str(snakemake.threads)+" >> "+snakemake.log.run+" 2>&1"
+    command = "computeMatrix reference-point -S "+snakemake.input.bwg+" -R <(grep -vP '^(#|track)' "+snakemake.input.bed+"|awk '{{$2=$2+$10;$3=$2+1;print}}' OFS='\\t') -o "+snakemake.params.mtx+" "+extra+" --samplesLabel "+snakemake.params.sample_name+" -a "+str(snakemake.params.after)+" -b "+str(snakemake.params.before)+" -p "+str(snakemake.threads)+" >> "+snakemake.log.run+" 2>&1"
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     f.close()
