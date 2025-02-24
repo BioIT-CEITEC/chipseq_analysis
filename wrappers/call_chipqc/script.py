@@ -21,11 +21,17 @@ f.write("## CONDA: "+version+"\n")
 f.close()
 
 if os.path.isfile(snakemake.input.peaks) and sum(1 for line in open(snakemake.input.peaks, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
+  command = "grep -vP '^(#|track)' "+snakemake.input.peaks+"|awk '{{$2=$2+$10;$3=$2+1;print}}' OFS='\\t' > "+snakemake.params.input_peaks+" 2>> "+snakemake.log.run
+  f = open(snakemake.log.run, 'at')
+  f.write("## COMMAND: "+command+"\n")
+  f.close()
+  shell(command)
+
   command = "$(which time) --verbose Rscript "+snakemake.params.rscript+\
             " "+snakemake.params.odir+\
             " "+snakemake.params.prefix+\
             " "+snakemake.output.Rsam+\
-            " <(grep -vP '^(#|track)' "+snakemake.input.peaks+"|awk '{{$2=$2+$10;$3=$2+1;print}}' OFS='\\t')"+\
+            " "+snakemake.params.input_peaks+\
             " "+snakemake.input.reads+\
             " >> "+snakemake.log.run+" 2>&1"
 else:
