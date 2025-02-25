@@ -525,6 +525,7 @@ rule plot_average_peak_profile:
             profile_type = "std",
             profile_avrg = "median",
             sample_name = "{name}.{dups}.{filt}",
+            input_peaks = GLOBAL_TMPD_PATH+"/{tool}_peaks.{name}.{dups}.{filt}.tmp.narrowPeak",
             mtx = "results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.mtx.tmp.gz",
             data = "results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.heatmap_matrix.gz",
     conda:  "../wrappers/plot_average_peak_profile/env.yaml"
