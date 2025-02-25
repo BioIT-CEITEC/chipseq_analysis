@@ -570,7 +570,7 @@ rule call_chipqc:
             Rsam = "results/ChIPQC/{sample}/{sample}.{dups}.sample.RData",
     log:    run = "logs/{sample}/call_chipqc.{dups}.log"
     params: rscript = workflow.basedir+"/wrappers/call_chipqc/chipqc_sample.R",
-            input_peaks = GLOBAL_TMPD_PATH+"/MACS_peaks.{wc.sample}.{wc.dups}.narrowPeak",
+            input_peaks = GLOBAL_TMPD_PATH+"/MACS_peaks.{sample}.{dups}.narrowPeak",
             odir = "results/ChIPQC/{sample}",
             prefix="{sample}.{dups}.report"
     conda:  "../wrappers/call_chipqc/env.yaml"
