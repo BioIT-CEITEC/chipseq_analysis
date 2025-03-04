@@ -196,39 +196,40 @@ if snakemake.params.spikein:
     f = open(snakemake.log.run, 'at')
     f.write("## INFO: Cutoff-analysis failed!\n")
     f.close()
-  
+
   command = "$(which time) --verbose macs2 bdgpeakcall -i "+final_track+" -c 1 -l 115 -g 75 -o "+snakemake.params.nar_tab+" 2>> "+snakemake.log.run
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-  
+
   command = "cat "+snakemake.params.nar_tab+" | awk '{{if(NR==1){{print $0}}else{{$9=$5/10; print $0}}}}' OFS='\t' > "+snakemake.output.nar_tab_all+" 2>> "+snakemake.log.run
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-  
+
   # create empty output files
   command = "touch "+snakemake.output.sum_tab_all+" "+snakemake.output.sum_tab+" "+snakemake.output.xls_tab_all+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-  
+
 else:
   # Without spike-in normalisation, macs2 could be used in single-command way with implicit normalisation and conversion of input files
-  input_line += " -f BAM"
   if paired:
     input_line += " -f BAMPE"
-  
+  else:
+    input_line += " -f BAM"
+
   keep_dups = "all"
-  
+
   if snakemake.params.frag_len == "unk":
     nomodel = "--fix-bimodal"
   else:
     nomodel = "--nomodel --extsize "+str(snakemake.params.frag_len)
-              
+
   command = "$(which time) macs2 callpeak "+input_line+\
             " --keep-dup "+keep_dups+\
             " -g "+str(snakemake.params.effective_GS)+\
