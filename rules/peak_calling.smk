@@ -86,7 +86,7 @@ def diff_summary_inputs(wc):
             conditions = list(itertools.combinations(sample_tab.loc[sample_tab.is_control==False,'condition'].unique(),2))
         else:
             # use only specified conditions
-            conditions = [x.split(":") for x in config['conds_to_compare'].split(",")]
+            conditions = [x.split(":") for x in config['conds_to_compare'].split(";")]
         
         # print([i for i in conditions])
         for cond in conditions:
