@@ -1,8 +1,17 @@
 library(data.table)
 
 #setwd("/mnt/nfs/shared/S3acgt/sequia/15869__chipseq_analysis__ChIP_peak_calling__231214")
-#c1 = "results/MACS_peaks/H7_M_VS_Ig_M/H7_M_VS_Ig_M.no_dups.peaks.all.narrowPeak"
-#c2 = "results/MACS_peaks/BRD4_R_VS_Ig_R/BRD4_R_VS_Ig_R.no_dups.peaks.all.narrowPeak"
+#c1 = "results/SEACR_peaks/pCSTF2_INH_VS_IgG/pCSTF2_INH_VS_IgG.no_dups.peaks.all.narrowPeak"
+#c2 = "results/SEACR_peaks/pCSTF2_VS_IgG/pCSTF2_VS_IgG.no_dups.peaks.all.narrowPeak"
+#tab_all = "results/overlapped_peaks/pCSTF2_INH_vs_pCSTF2/overlapped_peaks.no_dups.by_SEACR.bed"
+#tab_hist = "results/overlapped_peaks/pCSTF2_INH_vs_pCSTF2/overlapped_peaks.no_dups.by_SEACR.hist.tsv"
+#tab_s1 = "results/overlapped_peaks/pCSTF2_INH_vs_pCSTF2/singletons_in_pCSTF2_INH.no_dups.by_SEACR.bed"
+#tab_s2 = "results/overlapped_peaks/pCSTF2_INH_vs_pCSTF2/singletons_in_pCSTF2.no_dups.by_SEACR.bed"
+#out_sum_tab= "results/overlapped_peaks/pCSTF2_INH_vs_pCSTF2/summary_table.no_dups.by_SEACR.tsv"
+#comparison = "pCSTF2_INH_vs_pCSTF2"
+#tool = "SEACR"
+#fdr_cutof = 0.05
+#l2fc_cutof= 0
 
 args = commandArgs(trailingOnly = T)
 c1 = args[1]
@@ -17,9 +26,13 @@ tool = args[9]
 fdr_cutof = as.numeric(args[10])
 l2fc_cutof= as.numeric(args[11])
 
-
-names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qval", "rel_summit_pos") # rsp = relative summit position
-classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
+if(tool == "SEACR") {
+  names = c("chr","start","end","name","score","summit_cov","summit_pos")
+  classes = c("character","integer","integer","character","numeric","numeric","character")
+} else {
+  names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qval", "rel_summit_pos") # rsp = relative summit position
+  classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
+}
 
 peaks1 = fread(cmd = paste0("cut -f 1-",length(names)," ",c1), sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
 if(peaks1[,.N]==0) {
@@ -48,7 +61,31 @@ peaks2[,len_2:=end_2-start_2]
 overlapped1 = foverlaps(peaks1, peaks2, by.x=c("chr_1","start_1","end_1"), by.y=c("chr_2","start_2","end_2"), nomatch = NA)
 setnames(overlapped1, "chr_1", "chr")
 # write down the singletons and remove them from table
-fwrite(overlapped1[is.na(name_2), .(chr,start=start_1,end=end_1,name=name_1,score=score_1,strand=strand_1,l2fc=l2fc_1,pval=pval_1,qval=qval_1,summit=rel_summit_pos_1)][order(chr)], 
+if(tool == "SEACR") {
+  result = overlapped1[is.na(name_2),
+    .(`#chr` = chr,
+      start = start_1,
+      end = end_1,
+      name = name_1,
+      score = score_1,
+      summit_cov = summit_cov_1,
+      summit = summit_pos_1)
+  ][order(`#chr`)]
+} else {
+  result = overlapped1[is.na(name_2),
+    .(`#chr` = chr,
+      start = start_1,
+      end = end_1,
+      name = name_1,
+      score = score_1,
+      strand = strand_1,
+      l2fc = l2fc_1,
+      pval = pval_1,
+      qval = qval_1,
+      summit = rel_summit_pos_1)
+  ][order(`#chr`)]
+}
+fwrite(result,
        tab_s1,
        col.names = T,
        row.names = F,
@@ -57,7 +94,31 @@ fwrite(overlapped1[is.na(name_2), .(chr,start=start_1,end=end_1,name=name_1,scor
 
 overlapped2 = foverlaps(peaks2, peaks1, by.y=c("chr_1","start_1","end_1"), by.x=c("chr_2","start_2","end_2"), nomatch = NA)
 setnames(overlapped2, "chr_2", "chr")
-fwrite(overlapped2[is.na(name_1), .(chr,start=start_2,end=end_2,name=name_2,score=score_2,strand=strand_2,l2fc=l2fc_2,pval=pval_2,qval=qval_2,summit=rel_summit_pos_2)][order(chr)], 
+if(tool == "SEACR") {
+  result = overlapped2[is.na(name_1),
+    .(`#chr` = chr,
+      start = start_2,
+      end = end_2,
+      name = name_2,
+      score = score_2,
+      summit_cov = summit_cov_2,
+      summit = summit_pos_2)
+  ][order(`#chr`)]
+} else {
+  result = overlapped2[is.na(name_1),
+    .(`#chr` = chr,
+      start = start_2,
+      end = end_2,
+      name = name_2,
+      score = score_2,
+      strand = strand_2,
+      l2fc = l2fc_2,
+      pval = pval_2,
+      qval = qval_2,
+      summit = rel_summit_pos_2)
+  ][order(`#chr`)]
+}
+fwrite(result,
        tab_s2,
        col.names = T,
        row.names = F,
@@ -80,23 +141,26 @@ if(tool == "SEACR") {
 
 overlapped = overlapped1[!is.na(name_1)&!is.na(name_2)]
 # compute overlap length and its percentage  against the combined length of both peaks divided by 2
-overlapped[ ,overlap_len:=ifelse(end_1<end_2,end_1,end_2)-ifelse(start_1>start_2,start_1,start_2) ]
+overlapped[ ,overlap_len:=fifelse(end_1<end_2,end_1,end_2)-ifelse(start_1>start_2,start_1,start_2) ]
 overlapped[ ,overlap_perc:=round(overlap_len/((len_1+len_2)*0.5),4) ]
-overlapped[ ,overlap_l2fc:=ifelse(l2fc_1<l2fc_2, l2fc_2, l2fc_1)]
 # overlapped[ ,overlap_pval:=10^-sum(pval_1,pval_2)]
 if(tool == "SEACR") {
-  overlapped[ ,overlap_pval:=0, by=seq_along(chr)]
-  overlapped[ ,overlap_FDR:= 0, by=seq_along(chr)]
-  overlapped[ ,overlap_qval:=0, by=seq_along(chr)]
+#  overlapped[ ,overlap_l2fc:=fifelse(l2fc_1<l2fc_2, l2fc_2, l2fc_1)]
+#  overlapped[ ,overlap_pval:=0, by=seq_along(chr)]
+#  overlapped[ ,overlap_FDR:= 0, by=seq_along(chr)]
+#  overlapped[ ,overlap_qval:=0, by=seq_along(chr)]
   overlapped[ ,overlap_score:=ifelse(score_1>score_2, score_1, score_2)]
+  # add number of significant overlapped peaks into summary file
+  sum_tab[,eval(paste0(tool,"_sig_overlap")) := overlapped[,.N]]
 } else {
+  overlapped[ ,overlap_l2fc:=fifelse(l2fc_1<l2fc_2, l2fc_2, l2fc_1)]
   overlapped[ ,overlap_pval:=pchisq(-2*sum(log(10^-c(pval_1,pval_2))), 4, lower.tail=FALSE), by=seq_along(chr)]
   overlapped[ ,overlap_FDR:=p.adjust(overlap_pval, method = "fdr")]
   overlapped[ ,overlap_qval:=-log10(overlap_FDR)]
   overlapped[ ,overlap_score:=floor(10*overlap_qval)]
+  # add number of significant overlapped peaks into summary file
+  sum_tab[,eval(paste0(tool,"_sig_overlap")) := overlapped[overlap_FDR < fdr_cutof, .N]]
 }
-# add number of significant overlapped peaks into summary file and write it down
-sum_tab[,eval(paste0(tool,"_sig_overlap")) := overlapped[overlap_FDR < fdr_cutof, .N]]
 fwrite(sum_tab, out_sum_tab, sep = '\t', row.names = F, col.names = T)
 
 fwrite(overlapped[order(chr)], 

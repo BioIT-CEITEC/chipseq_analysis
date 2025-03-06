@@ -99,10 +99,11 @@ def diff_summary_inputs(wc):
             elif not cond[1] in sample_tab['condition'].unique():
                 raise ValueError(f"No such condition as {cond[1]} in sample conditions!")
             else:
-                # inputs.append(f"results/MACS_bdgdiff/{cond[0]}_vs_{cond[1]}/enriched_peaks_venn.{wc.dups}.tsv")
-                # inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MACS.tsv")
+                inputs.append(f"results/MACS_bdgdiff/{cond[0]}_vs_{cond[1]}/enriched_peaks_venn.{wc.dups}.tsv")
+                inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MACS.tsv")
+#                inputs.append(f"results/merged_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MACS.tsv")
                 inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_SEACR.tsv")
-                inputs.append(f"results/merged_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_SEACR.tsv")
+#                inputs.append(f"results/merged_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_SEACR.tsv")
                 # if all(i > 1 for i in sample_tab.loc[(sample_tab.condition==cond[0])|(sample_tab.condition==cond[1]), 'num_of_reps'].unique()):
                 #     inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MSPC.tsv")
                 #     inputs.append(f"results/DiffBind/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.tsv")
