@@ -614,18 +614,20 @@ rule overlap_replicates:
 def reproducible_peaks_summary_inputs(wc):
     inputs = list()
     doublerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==2), "condition"].unique()
-    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.peaks.all.bed", 
+    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=doublerep, 
                 dups=wc.dups, 
+                tool=['SEACR','MACS'],
                 reps=['true_reps','pseudo_reps'])
     # inputs+= expand("results/overlapped_replicates/{sample}/{sample}.summary_table.{dups}.by_{tool}.bed",
     #             sample=doublerep,
     #             dups=wc.dups,
     #             tool=['SEACR','MACS'])
     triplerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==3), "condition"].unique()
-    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{comp}.{dups}.peaks.all.bed", 
+    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{comp}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=triplerep, 
                 dups=wc.dups, 
+                tool=['SEACR','MACS'],
                 comp=["rep1_VS_rep2","rep2_VS_rep3","rep1_VS_rep3"],
                 reps=['true_reps','pseudo_reps'])
     multirep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps>=2), "condition"].unique()
