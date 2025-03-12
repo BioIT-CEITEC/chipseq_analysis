@@ -735,12 +735,18 @@ rule call_chipr:
 def annotate_peaks_inputs(wc):
   suffix = ".pseudo_reps"
   if wc.name.endswith(suffix):
-    samples = [i for i in wc.name[:-len(suffix)].split('_VS_') if i != 'no_control']
+    # this branch is meant for peak calling using pseudo replicates (i.e., MACS)
+    samples = wc.name[:-len(suffix)].split('_VS_')
   else:
-    samples = [i for i in wc.name.split('_VS_') if i != 'no_control']
+    # this branch is menat for peak calling using true replicates
     if not '_VS_' in wc.name:
-      samples = sample_tab.loc[sample_tab['condition'] == wc.name, "control"].unique()
-      samples = [*samples, *sample_tab.loc[sample_tab['condition'] == wc.name, "name"].unique()]
+      # this branch is meant for multi-replicate peak calling (e.g., MSPC, MACS)
+      samples = [*sample_tab.loc[sample_tab['condition'] == wc.name, "name"].unique(),
+                 *sample_tab.loc[sample_tab['condition'] == wc.name, "control"].unique()]
+    else:
+      # this branch is meant for single-replicate peak calling (e.g., SEACR, MACS)
+      samples = wc.name.split('_VS_')
+  samples = [i for i in samples if i != "no_control"]
   inputs = {
     'bed': f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.all.narrowPeak",
     'gtf': config["organism_gtf"],
