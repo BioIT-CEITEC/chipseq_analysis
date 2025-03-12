@@ -279,6 +279,11 @@ def overlap_conditions_input(wc):
     c1 = wc.c1
     c2 = wc.c2
     consensus_type = wc.consensus_type
+    if wc.tool == "MSPC":      
+      inputs['c1'] = f"results/{wc.tool}_peaks/{wc.c1}/{wc.c1}.{wc.dups}.peaks.all.narrowPeak"
+      inputs['c2'] = f"results/{wc.tool}_peaks/{wc.c2}/{wc.c2}.{wc.dups}.peaks.all.narrowPeak"
+      return inputs
+
     if sample_tab.loc[sample_tab.condition==wc.c1, 'num_of_reps'].unique() == 1:
       c1 = sample_tab.loc[sample_tab.condition==wc.c1, 'peaks_name'].unique()[0]
       inputs['c1'] = f"results/{wc.tool}_peaks/{c1}/{c1}.{wc.dups}.peaks.all.narrowPeak"
