@@ -27,9 +27,13 @@ rep2 = args[9]
 # fdr_cutof = as.numeric(args[10])
 # l2fc_cutof= as.numeric(args[11])
 
-
-names = c("chr", "start", "end", "name", "score", "signal", "real_summit") # rsp = relative summit position
-classes = c("character","integer","integer","character","numeric", "numeric", "character")
+if(tool == "SEACR") {
+  names = c("chr", "start", "end", "name", "score", "signal", "real_summit") # rsp = relative summit position
+  classes = c("character","integer","integer","character","numeric", "numeric", "character")
+} else {
+  names = c("chr", "start", "end", "name", "score", "strand", "signal", "pval", "qval", "summit") # rsp = relative summit position
+  classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
+}
 
 peaks1 = fread(rep1, sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
 if(peaks1[,.N]==0) {
@@ -45,17 +49,19 @@ if(peaks1[,.N]==0) {
   peaks1[,tpm_1 := numeric()]
 } else {
 	peaks1[,name_1 := paste0(name_1,"_1")]
-	peaks1[,summit_1:={
-	  sum_bounds=str_split(sub('^.*:','',real_summit_1),'-')[[1]]
-	  (as.numeric(sum_bounds[1])-start_1)+floor((as.numeric(sum_bounds[2])-as.numeric(sum_bounds[1]))/2)
-	}, by=seq_along(chr_1)]
+  if(tool == "SEACR") {
+	  peaks1[,summit_1:={
+	    sum_bounds=str_split(sub('^.*:','',real_summit_1),'-')[[1]]
+	    (as.numeric(sum_bounds[1])-start_1)+floor((as.numeric(sum_bounds[2])-as.numeric(sum_bounds[1]))/2)
+	  }, by=seq_along(chr_1)]
+  }
 	peaks1[,len_1:=end_1-start_1]
 	peaks1[,tpm_1:=1000*score_1/len_1]
 }
 
 peaks2 = fread(rep2, sep = "\t", col.names = paste0(names,"_2"), key = c("chr_2","start_2","end_2"), colClasses = classes)
 if(peaks2[,.N]==0) {
-  peaks2 = data.table(matrix(ncol = 10, nrow = 0))
+  peaks2 = data.table(matrix(ncol = length(names), nrow = 0))
   names_2 = paste0(names,'_2')
   colnames(peaks2) = names_2
   setkeyv(peaks2, names_2[1:3])
@@ -67,10 +73,12 @@ if(peaks2[,.N]==0) {
   peaks2[,tpm_2 := numeric()]
 } else {
   peaks2[,name_2 := paste0(name_2,"_2")]
-  peaks2[,summit_2:={
-    sum_bounds=str_split(sub('^.*:','',real_summit_2),'-')[[1]]
-    (as.numeric(sum_bounds[1])-start_2)+floor((as.numeric(sum_bounds[2])-as.numeric(sum_bounds[1]))/2)
-  }, by=seq_along(chr_2)]
+  if(tool == "SEACR") {
+    peaks2[,summit_2:={
+      sum_bounds=str_split(sub('^.*:','',real_summit_2),'-')[[1]]
+      (as.numeric(sum_bounds[1])-start_2)+floor((as.numeric(sum_bounds[2])-as.numeric(sum_bounds[1]))/2)
+    }, by=seq_along(chr_2)]
+  }
   peaks2[,len_2:=end_2-start_2]
   peaks2[,tpm_2:=1000*score_2/len_2]
 }
@@ -79,10 +87,36 @@ if(peaks2[,.N]==0) {
 overlapped1 = foverlaps(peaks1, peaks2, by.x=c("chr_1","start_1","end_1"), by.y=c("chr_2","start_2","end_2"), nomatch = NA)
 setnames(overlapped1, "chr_1", "chr")
 # write down the singletons
-fwrite(overlapped1[
-  is.na(name_2), 
-  .(chr,start=start_1,end=end_1,name=name_1,score=tpm_1,strand='.',signal=signal_1,pval=0,qval=0,summit=summit_1,
-    real_summit=real_summit_1,peak_len=len_1,total_cov=score_1)][order(chr)], 
+if(tool == "SEACR") {
+  result = overlapped1[is.na(name_2),
+    .(`#chr` = chr,
+      start = start_1,
+      end = end_1,
+      name = name_1,
+      score = score_1,
+      summit_cov = signal_1,
+      summit_pos = real_summit_1,
+      peak_len = len_1,
+      tpm = tpm_1,
+      summit = summit_1)
+  ][order(`#chr`)]
+} else {
+  result = overlapped1[is.na(name_2),
+    .(`#chr` = chr,
+      start = start_1,
+      end = end_1,
+      name = name_1,
+      score = score_1,
+      strand = strand_1,
+      signal = signal_1,
+      pval = pval_1,
+      qval = qval_1,
+      summit = summit_1,
+      peak_len = len_1,
+      tpm = tpm_1)
+  ][order(`#chr`)]
+}
+fwrite(result, 
        tab_s1,
        col.names = T,
        row.names = F,
@@ -91,37 +125,78 @@ fwrite(overlapped1[
 
 overlapped2 = foverlaps(peaks2, peaks1, by.y=c("chr_1","start_1","end_1"), by.x=c("chr_2","start_2","end_2"), nomatch = NA)
 setnames(overlapped2, "chr_2", "chr")
-fwrite(overlapped2[
-  is.na(name_1), 
-  .(chr,start=start_2,end=end_2,name=name_2,score=tpm_2,strand='.',signal=signal_2,pval=0,qval=0,summit=summit_2,
-    real_summit=real_summit_2,peak_len=len_2,total_cov=score_2)][order(chr)], 
+if(tool == "SEACR") {
+  result = overlapped1[is.na(name_1),
+    .(`#chr` = chr,
+      start = start_2,
+      end = end_2,
+      name = name_2,
+      score = score_2,
+      summit_cov = signal_2,
+      summit_pos = real_summit_2,
+      peak_len = len_2,
+      tpm = tpm_2,
+      summit = summit_2)
+  ][order(`#chr`)]
+} else {
+  result = overlapped1[is.na(name_1),
+    .(`#chr` = chr,
+      start = start_2,
+      end = end_2,
+      name = name_2,
+      score = score_2,
+      strand = strand_2,
+      signal = signal_2,
+      pval = pval_2,
+      qval = qval_2,
+      summit = summit_2,
+      peak_len = len_2,
+      tpm = tpm_2)
+  ][order(`#chr`)]
+}
+fwrite(result, 
        tab_s2,
        col.names = T,
        row.names = F,
        sep = "\t",
        quote = F)
 
-merged = rbind(overlapped1[,.(chr,start=start_1,end=end_1,name=name_1,score=tpm_1,strand='.',signal=signal_1,pval=0,qval=0,summit=summit_1,
-                              real_summit=real_summit_1,peak_len=len_1,total_cov=score_1)],
-               overlapped2[is.na(name_1),
-                           .(chr,start=start_2,end=end_2,name=name_2,score=tpm_2,strand='.',signal=signal_2,pval=0,qval=0,summit=summit_2,
-                             real_summit=real_summit_2,peak_len=len_2,total_cov=score_2)])
-merged = unique(merged)
-fwrite(merged[order(chr)], 
+if(tool == "SEACR") {
+  merged = rbind(overlapped1[,.(chr,start=start_1,end=end_1,name=name_1,score=score_1,summit_cov=signal_1,summit_pos=real_summit_1,peak_len=len_1,tpm=tpm_1,summit = summit_1)],
+                 overlapped2[is.na(name_1),
+                             .(chr,start=start_2,end=end_2,name=name_2,score=score_2,summit_cov=signal_2,summit_pos=real_summit_2,peak_len=len_2,tpm=tpm_2,summit = summit_2)])
+} else {
+  merged = rbind(overlapped1[,.(chr,start=start_1,end=end_1,name=name_1,score=score_1,strand='.',signal=signal_1,
+                                pval=pval_1,qval=qval_1,summit=summit_1,peak_len=len_1,tpm=tpm_1)],
+                 overlapped2[is.na(name_1),
+                             .(chr,start=start_2,end=end_2,name=name_2,score=score_2,strand='.',signal=signal_2,
+                               pval=pval_2,qval=qval_2,summit=summit_2,peak_len=len_2,tpm=tpm_2)])
+}
+merged = unique(merged)[order(chr)]
+fwrite(merged, 
        tab_all,
        col.names = T,
        row.names = F,
        sep = "\t",
        quote = F)
 
-overlapped = rbind(overlapped1[!is.na(name_1)&!is.na(name_2), 
-                               .(chr,start=start_1,end=end_1,name=name_1,score=tpm_1,strand='.',signal=signal_1,pval=0,qval=0,summit=summit_1,
-                                 real_summit=real_summit_1,peak_len=len_1,total_cov=score_1)],
-                   overlapped2[!is.na(name_1)&!is.na(name_2), 
-                               .(chr,start=start_2,end=end_2,name=name_2,score=tpm_2,strand='.',signal=signal_2,pval=0,qval=0,summit=summit_2,
-                                 real_summit=real_summit_2,peak_len=len_2,total_cov=score_2)])
-overlapped = unique(overlapped)
-fwrite(overlapped[order(chr)], 
+if(tool == "SEACR") {
+  overlapped = rbind(overlapped1[!is.na(name_1)&!is.na(name_2),
+                                 .(chr,start=start_1,end=end_1,name=name_1,score=score_1,summit_cov=signal_1,
+                                   summit_pos=real_summit_1,peak_len=len_1,tpm=tpm_1,summit = summit_1)],
+                     overlapped2[!is.na(name_1)&!is.na(name_2), 
+                                 .(chr,start=start_2,end=end_2,name=name_2,score=score_2,summit_cov=signal_2,
+                                   summit_pos=real_summit_2,peak_len=len_2,tpm=tpm_2,summit = summit_2)])
+} else {
+  overlapped = rbind(overlapped1[!is.na(name_1)&!is.na(name_2),
+                                  .(chr,start=start_1,end=end_1,name=name_1,score=score_1,strand='.',signal=signal_1,
+                                    pval=pval_1,qval=qval_1,summit=summit_1,peak_len=len_1,tpm=tpm_1)],
+                     overlapped2[!is.na(name_1)&!is.na(name_2), 
+                                  .(chr,start=start_2,end=end_2,name=name_2,score=score_2,strand='.',signal=signal_2,
+                                    pval=pval_2,qval=qval_2,summit=summit_2,peak_len=len_2,tpm=tpm_2)])
+}
+overlapped = unique(overlapped)[order(chr)]
+fwrite(overlapped, 
        tab_olap,
        col.names = T,
        row.names = F,
