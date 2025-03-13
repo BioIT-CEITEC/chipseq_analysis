@@ -624,10 +624,10 @@ def reproducible_peaks_summary_inputs(wc):
                 dups=wc.dups, 
                 tool=['SEACR','MACS'],
                 reps=['true_reps','pseudo_reps'])
-    # inputs+= expand("results/overlapped_replicates/{sample}/{sample}.summary_table.{dups}.by_{tool}.bed",
-    #             sample=doublerep,
-    #             dups=wc.dups,
-    #             tool=['SEACR','MACS'])
+    inputs+= expand("results/overlapped_replicates/{sample}/{sample}.summary_table.{dups}.by_{tool}.tsv",
+                sample=doublerep,
+                dups=wc.dups,
+                tool=['SEACR','MACS'])
     triplerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==3), "condition"].unique()
     inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{comp}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=triplerep, 
