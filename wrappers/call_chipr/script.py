@@ -22,7 +22,7 @@ f.close()
 command = "(time chipr --input "+" ".join(snakemake.input.peaks)+\
           " --minentries "+str(snakemake.params.minentries)+\
           " --size "+str(snakemake.params.minsize)+\
-          " --rankmethod score"+\
+          " --rankmethod pvalue"+\
           " --output "+snakemake.params.prefix+\
           " ) >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
