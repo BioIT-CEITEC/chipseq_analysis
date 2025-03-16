@@ -49,7 +49,7 @@ f.write("## COMMAND: "+command+"\n")
 f.close()
 shell(command)
 
-command = "$(which time) awk '$5 >= "+str(-125*math.log2(snakemake.params.cutof))+"' OFS='\t' FS='\t' "+snakemake.output.all_bed+\
+command = "$(which time) awk '$5 >= "+str(-125*math.log2(float(snakemake.params.cutof)))+"' OFS='\t' FS='\t' "+snakemake.output.all_bed+\
           " > "+snakemake.output.bed+" 2>> "+snakemake.log.run
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")
