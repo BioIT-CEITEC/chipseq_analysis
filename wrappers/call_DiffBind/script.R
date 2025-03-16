@@ -55,10 +55,10 @@ volcano_plot_deseq = snakemake@output[['volcano_plot_deseq']]
 volcano_plot_edger = snakemake@output[['volcano_plot_edger']]
 DBA_heat_deseq = snakemake@output[['DBA_heat_deseq']]
 DBA_heat_edger = snakemake@output[['DBA_heat_edger']]
-fdr_cutof = snakemake@params[['fdr_cutof']]
-l2fc_cutof= snakemake@params[['l2fc_cutof']]
+fdr_cutof = as.numeric(snakemake@params[['fdr_cutof']])
+l2fc_cutof= as.numeric(snakemake@params[['l2fc_cutof']])
 comparison= snakemake@params[['comparison']]
-top_num = snakemake@params[['top']]
+top_num = as.numeric(snakemake@params[['top']])
 
 cat("# reading design samplesheet ",design_tab," as DBA object\n")
 design_tab = read.csv(design_tab, sep = '\t')
@@ -111,6 +111,7 @@ fwrite(deseq_tab,
        col.names = T,
        quote = F)
 
+cat('# printing summary table\n')
 sum_tab = data.table(
   comparison = comparison,
   total = deseq_tab[,.N],
@@ -123,6 +124,7 @@ sum_tab = data.table(
 )
 fwrite(sum_tab, out_sum_tab, sep = '\t', row.names = F, col.names = T)
 
+cat('# doing plots\n')
 if(as.numeric(dba.show(data, bContrasts=TRUE, th=fdr_cutof)[['DB.edgeR']]) > 1) {
   png(filename = gsub(".pdf$",".png",cor_heat_edger), width = 1080, height = 1080, pointsize = 20)
   dba.plotHeatmap(data, contrast = 1, th=fdr_cutof, method = DBA_EDGER, margin = 20, main = "Correlation heatmap (using diff. bound sites)")

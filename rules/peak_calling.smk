@@ -34,14 +34,14 @@ from os.path import split
 def multiqc_report_inputs(wc):
     inputs = list()
     inputs+= expand("results/enriched_peaks_summary.{dups}.tsv", dups=config["dups"])
+    samples = sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique()
     if any(i > 1 for i in sample_tab['num_of_reps']):
         inputs+= expand("results/reproducible_peaks_summary.{dups}.tsv", dups=config["dups"])
         inputs+= expand("results/overlapped_replicates_summary.{dups}.tsv", dups=config["dups"])
-        samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(),
-                      *sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "condition"].unique()]
+        samples = [*samples,
+                   *sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "condition"].unique()]
     else:
         print("No replicates!")
-        samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique()]
     if 'conds_to_compare' in config and config['conds_to_compare'] != "" and sample_tab.shape[0] > 1:
         inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config["dups"])
     inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
@@ -126,10 +126,11 @@ def call_diffbind_inputs(wc):
       sample = sample_tab.loc[sample_tab['name'] == row.SampleID, 'sample_name'].min(),
       dups = wc.dups
   ), axis=1)
-  design_tab['bamControl'] = design_tab.apply(lambda row: "mapped/{sample}.{dups}.bam".format(
-      sample = sample_tab.loc[sample_tab['name'] == row.ControlID, 'sample_name'].min(),
-      dups = wc.dups
-  ), axis=1)
+  if not design_tab['ControlID'].isin(["no_control"]).any():
+    design_tab['bamControl'] = design_tab.apply(lambda row: "mapped/{sample}.{dups}.bam".format(
+        sample = sample_tab.loc[sample_tab['name'] == row.ControlID, 'sample_name'].min(),
+        dups = wc.dups
+    ), axis=1)
   design_tab['Peaks'] = design_tab.apply(lambda row: "results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.narrowPeak".format(
       tool = "MACS",
       name = row.SampleID+"_VS_"+row.ControlID,
@@ -143,7 +144,10 @@ def call_diffbind_inputs(wc):
   design_tab.to_csv(design, sep="\t", index=False)
   
   inputs['bed'] = expand("{peaks}", peaks=design_tab['Peaks'].unique())
-  inputs['bam'] = expand("{reads}", reads=[*design_tab['bamReads'].unique(),*design_tab['bamControl'].unique()])
+  if not design_tab['ControlID'].isin(["no_control"]).any():
+    inputs['bam'] = expand("{reads}", reads=[*design_tab['bamReads'].unique(),*design_tab['bamControl'].unique()])
+  else:
+    inputs['bam'] = expand("{reads}", reads=[*design_tab['bamReads'].unique()])
   inputs['tab'] = ancient(design)
   return inputs
 

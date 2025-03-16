@@ -20,7 +20,7 @@ module BR:
     snakefile: github("BioIT-CEITEC/bioroots_utilities", path="bioroots_utilities.smk",branch="master")
     config: config
 
-use rule * from BR as other_*
+use rule * from BR as BR_*
 
 ##### Config processing #####
 
@@ -73,4 +73,4 @@ module PR:
     snakefile: github("BioIT-CEITEC/bioroots_utilities", path="prepare_reference.smk",branch="master")
     config: config
 
-use rule * from PR as other_*
+use rule * from PR as PR_*
