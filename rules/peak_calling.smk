@@ -591,7 +591,6 @@ rule call_chipqc:
 # Examine Peaks reproducibility
 #
 
-# TODO: finish the body of the script
 rule overlap_replicates_summary:
     input:  bed = expand("results/overlapped_replicates/{sample}/{sample}.summary_table.{{dups}}.by_{tool}.tsv", sample=sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==2), "condition"].unique(), tool=['SEACR','MACS'])
     output: tab = "results/overlapped_replicates_summary.{dups}.tsv"
@@ -623,20 +622,22 @@ rule overlap_replicates:
 def reproducible_peaks_summary_inputs(wc):
     inputs = list()
     doublerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==2), "condition"].unique()
+## DEMON: in order to use SEACR as a test for reproducibility, it must include runs on pseudo replicates (for IDR)
     inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=doublerep, 
                 dups=wc.dups, 
-                tool=['SEACR','MACS'],
+                tool=['MACS'],
                 reps=['true_reps','pseudo_reps'])
-    inputs+= expand("results/overlapped_replicates/{sample}/{sample}.summary_table.{dups}.by_{tool}.tsv",
-                sample=doublerep,
-                dups=wc.dups,
-                tool=['SEACR','MACS'])
+## DEMON: in order to use overlapped replicates as a test for reproducibility, it must include runs on pseudo replicates
+#    inputs+= expand("results/overlapped_replicates/{sample}/{sample}.merged_peaks.{dups}.by_{tool}.bed",
+#                sample=doublerep,
+#                dups=wc.dups,
+#                tool=['SEACR','MACS'])
     triplerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==3), "condition"].unique()
     inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{comp}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=triplerep, 
                 dups=wc.dups, 
-                tool=['SEACR','MACS'],
+                tool=['MACS'],
                 comp=["rep1_VS_rep2","rep2_VS_rep3","rep1_VS_rep3"],
                 reps=['true_reps','pseudo_reps'])
     multirep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps>=2), "condition"].unique()
