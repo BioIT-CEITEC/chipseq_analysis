@@ -34,7 +34,7 @@ if(tool == "SEACR") {
   classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
 }
 
-peaks1 = fread(cmd = paste0("cut -f 1-",length(names)," ",c1), sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
+peaks1 = fread(cmd = paste0("grep -vP '^(track|#)' ",c1," | cut -f 1-",length(names)), sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
 if(peaks1[,.N]==0) {
   peaks1 = data.table(matrix(ncol = length(names), nrow = 0))
   names_1 = paste0(names,'_1')
@@ -45,7 +45,7 @@ if(peaks1[,.N]==0) {
   }
 }
 peaks1[,len_1:=end_1-start_1]
-peaks2 = fread(cmd = paste0("cut -f 1-",length(names)," ",c2), sep = "\t", col.names = paste0(names,"_2"), key = c("chr_2","start_2","end_2"), colClasses = classes)
+peaks2 = fread(cmd = paste0("grep -vP '^(track|#)' ",c2," | cut -f 1-",length(names)), sep = "\t", col.names = paste0(names,"_2"), key = c("chr_2","start_2","end_2"), colClasses = classes)
 if(peaks2[,.N]==0) {
   peaks2 = data.table(matrix(ncol = length(names), nrow = 0))
   names_2 = paste0(names,'_2')

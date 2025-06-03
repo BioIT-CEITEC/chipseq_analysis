@@ -19,27 +19,39 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-command = "cat "+snakemake.input.xls1+" | grep -qF '# Paired-End mode is on'"+\
-          " && echo $(cat "+snakemake.input.xls1+"|grep -F '# total fragments in treatment:'|sed 's/ //g'|cut -f2 -d':')"+\
-          " || echo $(cat "+snakemake.input.xls1+"|grep -F '# total tags in treatment:'|sed 's/ //g'|cut -f2 -d':')"
-# command = "cat "+snakemake.input.xls1+" | grep -F '# total "+tags+" in treatment:' | sed 's/ //g' | cut -f 2 -d ':'"
-depth = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-f = open(snakemake.log.run, 'at')
-f.write("## COMMAND: "+command+"\n")
-f.write("## RESULT (Cond1 depth): "+depth+"\n")
-f.close()
-d1 = int(depth)
+if os.path.isfile(snakemake.input.xls1) and sum(1 for line in open(snakemake.input.xls1, 'r') ) > 0:
+        command = "cat "+snakemake.input.xls1+" | grep -qF '# Paired-End mode is on'"+\
+                  " && echo $(cat "+snakemake.input.xls1+"|grep -F '# total fragments in treatment:'|sed 's/ //g'|cut -f2 -d':')"+\
+                  " || echo $(cat "+snakemake.input.xls1+"|grep -F '# total tags in treatment:'|sed 's/ //g'|cut -f2 -d':')"
+        # command = "cat "+snakemake.input.xls1+" | grep -F '# total "+tags+" in treatment:' | sed 's/ //g' | cut -f 2 -d ':'"
+        depth = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
+        f = open(snakemake.log.run, 'at')
+        f.write("## COMMAND: "+command+"\n")
+        f.write("## RESULT (Cond1 depth): "+depth+"\n")
+        f.close()
+        d1 = int(depth)
+else:
+        f = open(snakemake.log.run, 'at')
+        f.write("## WARNING: "+snakemake.input.xls1+" is empty. Sequencing depth is set to 0!\n")
+        f.close()
+        d1 = 0
 
-command = "cat "+snakemake.input.xls2+" | grep -qF '# Paired-End mode is on'"+\
-          " && echo $(cat "+snakemake.input.xls2+"|grep -F '# total fragments in treatment:'|sed 's/ //g'|cut -f2 -d':')"+\
-          " || echo $(cat "+snakemake.input.xls2+"|grep -F '# total tags in treatment:'|sed 's/ //g'|cut -f2 -d':')"
-# command = "cat "+snakemake.input.xls2+" | grep -F '# total "+tags+" in treatment:' | sed 's/ //g' | cut -f 2 -d ':'"
-depth = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-f = open(snakemake.log.run, 'at')
-f.write("## COMMAND: "+command+"\n")
-f.write("## RESULT (Cond2 depth): "+depth+"\n")
-f.close()
-d2 = int(depth)
+if os.path.isfile(snakemake.input.xls2) and sum(1 for line in open(snakemake.input.xls2, 'r') ) > 0:
+        command = "cat "+snakemake.input.xls2+" | grep -qF '# Paired-End mode is on'"+\
+                  " && echo $(cat "+snakemake.input.xls2+"|grep -F '# total fragments in treatment:'|sed 's/ //g'|cut -f2 -d':')"+\
+                  " || echo $(cat "+snakemake.input.xls2+"|grep -F '# total tags in treatment:'|sed 's/ //g'|cut -f2 -d':')"
+        # command = "cat "+snakemake.input.xls2+" | grep -F '# total "+tags+" in treatment:' | sed 's/ //g' | cut -f 2 -d ':'"
+        depth = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
+        f = open(snakemake.log.run, 'at')
+        f.write("## COMMAND: "+command+"\n")
+        f.write("## RESULT (Cond2 depth): "+depth+"\n")
+        f.close()
+        d2 = int(depth)
+else:
+        f = open(snakemake.log.run, 'at')
+        f.write("## WARNING: "+snakemake.input.xls2+" is empty. Sequencing depth is set to 0!\n")
+        f.close()
+        d2 = 0
 
 
 command = "$(which time) macs2 bdgdiff"+\
