@@ -118,7 +118,7 @@
     "detailed": {
       "effective_genome_size": {
         "label": "Effective genome size (MACS)",
-        "info": "Effective genome size is defined as the length of the “mappable” genome and is used to correct for the loss of true signals in low-mappable regions. It's used in MACS tool. We strongly suggest using the value from https://test-argparse-readoc.readthedocs.io/en/latest/content/feature/effectiveGenomeSize.html where possible.",
+        "info": "Effective genome size is defined as the length of the “mappable” genome and is used to correct for the loss of true signals in low-mappable regions. It's used in MACS tool. We strongly suggest using the value from https://test-argparse-readoc.readthedocs.io/en/latest/content/feature/effectiveGenomeSize.html where possible. Default: 'hs' for Homo sapiens.",
         "type": "string",
         "default": "unk"
       },
