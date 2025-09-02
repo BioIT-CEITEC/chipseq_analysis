@@ -218,6 +218,15 @@ if snakemake.params.spikein:
 
 else:
   # Without spike-in normalisation, macs2 could be used in single-command way with implicit normalisation and conversion of input files
+
+  # Here should be a command using the faCount tool to count the real effective genome size if needed.
+  if str(snakemake.params.effective_GS) == "unk":
+    f = open(snakemake.log.run, 'at')
+    f.write("## INFO: Effective genome size parameter (-g) can no longer be 'unk'! It can be 1.0e+9 or 1000000000, or shortcuts:'hs' for human (2.7e9), 'mm' for mouse (1.87e9), 'ce' for C. elegans (9e7) and 'dm' for fruitfly (1.2e8). Please, change the value. \n")
+    f.close()
+    exit()
+
+  # Set the proper type of input data (single- vs. paired-end)
   if paired:
     input_line += " -f BAMPE"
   else:
@@ -225,6 +234,7 @@ else:
 
   keep_dups = "all"
 
+  # Set the proper MACS2 parameters to estimate fragment length if unknown
   if snakemake.params.frag_len == "unk":
     nomodel = "--fix-bimodal"
   else:
