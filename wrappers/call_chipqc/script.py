@@ -26,7 +26,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: samtools view -c "+snakemake.input.reads+" 2>> "+snakemake.log.run+"\n")
 f.write("## INFO: There are "+str(reads)+" of reads in "+snakemake.input.reads+"\n")
 f.close()
-if reads < 1000:
+if float(reads) < 1000:
   command = "touch "+(" ".join(snakemake.output))+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
   f.write("## INFO: Not enough reads to run ChipQC...touching an empty output files!\n")
