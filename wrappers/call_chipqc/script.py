@@ -24,7 +24,7 @@ f.close()
 reads = str(subprocess.Popen("samtools view -c "+snakemake.input.reads+" 2>> "+snakemake.log.run, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: samtools view -c "+snakemake.input.reads+" 2>> "+snakemake.log.run+"\n")
-f.write("## INFO: There are "+str(reads)+" of reads in "+snakemake.input.reads+"\n")
+f.write("## INFO: The number of reads in "+snakemake.input.reads+" is "+str(reads))
 f.close()
 if float(reads) < 1000:
   command = "touch "+(" ".join(snakemake.output))+" >> "+snakemake.log.run+" 2>&1"
