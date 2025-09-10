@@ -871,24 +871,24 @@ def call_macs2_inputs(wc):
     if wc.name.endswith(suffix):
       # This case is for doing peak calling on specific pseudo replicates (with or without control)
       samples[1] = samples[1][:-len(suffix)]
-      name = sample_tab.loc[sample_tab.name == samples[0], ["condition","tag"]]
+      name = sample_tab.loc[sample_tab.name == samples[0], ["condition", "tag"]]
       inputs["trt"] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
       if samples[1] != 'no_control':
-        name = sample_tab.loc[sample_tab.name == samples[1], ["condition","tag"]]
+        name = sample_tab.loc[sample_tab.name == samples[1], ["condition", "tag", "sample_name"]]
         if len(name["tag"].unique()) == 1:
-          # This case is for having only one repllicate of DNA innput sample
+          # This case is for having only one replicate of the DNA input sample
           if name['tag'].unique() == "":
-            # Here, DNA input sample doesn't use any tag (e.g. Replicate column is empty)
-            inputs['ctl'] = expand("mapped/{cond}.{dups}.bam", cond=name['condition'].unique(), dups=dups)
+            # Here, the DNA input sample doesn't use any tag (e.g., Replicate column is empty)
+            inputs['ctl'] = expand("mapped/{cond}.{dups}.bam", cond=name['sample_name'].unique(), dups=dups)
           else:
-            # Here, DNA input sample does use a tag (e.g., Replicate column is rep1)
-            inputs['ctl'] = expand("mapped/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
+            # Here, the DNA input sample does use a tag (e.g., Replicate column is rep1)
+            inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
         else:
           inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
     else:
       # This case is for doing peak calling on true replicates
       if len(samples) == 2:
-        # This case is for using specific replicate to call MACS (with or without control)
+        # This case is for using a specific replicate to call MACS (with or without control)
         inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
         if samples[1] != 'no_control':
           inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
@@ -901,7 +901,7 @@ def call_macs2_inputs(wc):
           inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=controls, dups=dups)
       if config['spikein']:
         if len(samples) == 2:
-          # This case is for using specific replicate to call MACS (with or without control)
+          # This case is for using a specific replicate to call MACS (with or without control)
           inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
           if samples[1] != 'no_control':
             inputs['ctl_spike'] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
