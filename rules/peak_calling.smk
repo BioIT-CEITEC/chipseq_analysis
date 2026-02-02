@@ -474,6 +474,7 @@ def create_gene_set_inputs(wc):
     inputs = {
       "ref": default_reference
     }
+    inputs['gset'] = gene_sets[wc.gene_set]
     if not ',' in gene_sets[wc.gene_set]:
         if wc.gene_set != "all_genes":
             inputs['gset'] = "gene_sets/"+gene_sets[wc.gene_set]
