@@ -19,7 +19,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-gene_set = snakemake.input.gset
+gene_set = snakemake.input.gset if hasattr(snakemake.input, 'gset') else snakemake.params.gene_sets[snakemake.wildcards.gene_set]
 if ',' in gene_set:
     f=open(snakemake.params.list,'w')
     for el in gene_set.split(','):
