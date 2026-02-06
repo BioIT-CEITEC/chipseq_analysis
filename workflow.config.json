@@ -5,14 +5,14 @@
     "label":"ChIP/CnR peak calling",
     "type":"chipseq_analysis",
     "inputs":[
-      "mapped/*_dups.bam*"
+      "mapped/{sample}.bam*"
     ],
     "inputs_optional":[
       "gene_sets/*",
       "qc_reports/*/phantompeakqual/*",
       "qc_reports/all_samples/deeptools/*",
       "qc_reports/*/qc_samtools/*",
-      "mapped/*spike.bam*"
+      "mapped/{sample}.spike.bam*"
     ],
     "outputs":[
       "mapped/*",
@@ -101,7 +101,7 @@
         }
       },
       "keep_duplicates": {
-        "label": "Keep all duplicates",
+        "label": "Keep all duplicates (reads filter)",
         "info": "In ChIP-seq analysis, it is recommended to remove all duplicates (because of the randomness in fragmentation during library preparation) while in Cut&Run analysis it's not necessary (depending on the library size and targeted region).",
         "type": "bool",
         "default": false,
@@ -116,14 +116,40 @@
       }
     },
     "detailed": {
+      "tlen_range": {
+        "label": "Allowed template length (reads filter)",
+        "info": "Allowed range of reads template length (TLEN). Other reads will be removed. For example, for Cut&Run protocol, it matters if template length is shorter than 120 bps if looking for TF binding sites. It's expected to be comma-separated pair of integers or just one number assumed to be maximum with 0 as minimum.",
+        "type": "string",
+        "default": "0,1000",
+        "conditions": {
+          "value": {
+            "protocol": {
+              "chipseq": "0, 1000",
+              "car": "0, 120"
+            }
+          }
+        }
+      },
+      "min_mapq": {
+        "label": "Min mapping quality (reads filter)",
+        "info": "Minimum mapping quality (MAPQ) of reads before peak calling. Other reads will be removed.",
+        "type": "int",
+        "default": 30
+      },
+      "ignore_regions": {
+        "label": "Ignore genomic regions (reads filter)",
+        "info": "Specify which genomic regions should be ignored and adequate reads will be removed. It's a comma-separated list with chromosome/contig names and few predefined words (i.e., 'blacklist' = ENCODE blacklist regions available for human and mouse genomes; 'not_chr' = everything except main chromosomes).",
+        "type": "string",
+        "default": "blacklist,MT,X,Y,not_chr"
+      },
       "effective_genome_size": {
         "label": "Effective genome size (MACS)",
         "info": "Effective genome size is defined as the length of the “mappable” genome and is used to correct for the loss of true signals in low-mappable regions. It's used in MACS tool. We strongly suggest using the value from https://test-argparse-readoc.readthedocs.io/en/latest/content/feature/effectiveGenomeSize.html where possible. Default: 'hs' for Homo sapiens.",
         "type": "string",
-        "default": "unk"
+        "default": "hs"
       },
       "fragment_length": {
-        "label": "Fragment length (MACS)",
+        "label": "Optimal fragment length (MACS)",
         "info": "Explicit value to be used for peak calling in MACS. Use only integers or 'unk' string. 'unk' forces MACS to compute the proper value by investigating the reads.",
         "type": "string",
         "default": "unk"

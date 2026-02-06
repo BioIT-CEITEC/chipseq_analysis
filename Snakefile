@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import json
 import numpy as np
+import shutil
 from snakemake.utils import min_version
 
 min_version("5.18.0")
@@ -45,6 +46,56 @@ config["dups"] = "keep_dups" if config["keep_duplicates"] else "no_dups"
   
 if config['spikein']:
   config['seacr_normalisation'] = "non"
+
+if not 'ignore_regions' in config:
+  config['ignore_regions'] = "blacklist,MT,X,Y,not_chr"
+
+## Process various possibilities of ignore_regions config param
+reserved_words = ['blacklist','blcklist','blacklst','not_chr','non_chr']
+filter_regions_bed = "mapped/filter_regions.bed"
+## add all blacklisted regions from ENCODE's list into ignore_regions bed if asked for
+if 'blacklist' in config['ignore_regions'] or 'blcklist' in config['ignore_regions'] or 'blacklst' in config['ignore_regions']:
+  config['bam_remove_blacklisted'] = true
+  blck_bed = config['reference_dir']+"/others/ChIP-seq/blacklist.v2.bed"
+  if os.path.isfile(blck_bed):
+    print("## INFO: Adding all blacklisted regions from ENCODE's blacklist ("+blck_bed+") into ignore_regions BED file.")
+    shutil.copy(blck_bed, filter_regions_bed)
+  else:
+    print("## INFO: The ENCODE's blacklist BED was not found. Creating an empty ignore_regions BED file.)
+    open(filter_regions_bed, 'x').close()
+else:
+  print("## INFO: Creating an empty ignore_regions BED file.)
+  config['bam_remove_blacklisted'] = false
+  open(filter_regions_bed, 'x').close()
+## add all non-main chromosomes into ignore_regions bed if asked for
+if 'not_chr' in config['ignore_regions'] or 'non_chr' in config['ignore_regions']:
+  if os.path.isfile(config['organism_chr_sizes']):
+    print("## INFO: Adding all alternative (non-main) chromosomes and contigs into ignore_regions BED file.")
+    tab = pd.read_table(config['organism_chr_sizes'], header=None, names=['chr','end'])
+    ## filter out all main chromosomes starting with number or chr[0-9]+ or X, Y, MT
+    ftab = tab[~tab['chr'].str.contains("^([0-9]+|chr([0-9]+|X|Y|M)|X|Y|MT)$")]
+    ## append 2nd column with zeros for start and append the table to the ignore_regions bed
+    ftab['start'] = 0
+    ftab[['chr','start','end']].to_csv(filter_regions_bed, header=False, index=False, sep='\t', mode='a')
+## add into ignore_regions bed everything else what user specified with start=0 and end=99999999999
+with open(filter_regions_bed, 'a') as b:
+  print("## INFO: Adding all user-specified genomic regions into ignore_regions BED file.")
+  for reg in config['ignore_regions'].split(','):
+    if not reg in reserved_words:
+      b.write(reg+'\t0\t99999999999\n')
+
+## Process tlen_range and define proper min_tlen and max_tlen in the config
+if not 'tlen_range' in config:
+  config['tlen_range'] = "0,1000"
+if not ',' in config['tlen_range']:
+  val = int(float(config['tlen_range'].replace(" ", "")))
+  config['min_tlen'] = 0
+  config['max_tlen'] = abs(val)
+else:
+  val = [abs(int(float(v))) for v in config['tlen_range'].replace(" ", "").split(',') ]
+  config['min_tlen'] = min(val)
+  config['max_tlen'] = max(val)
+print("## INFO: Valid range of reads template length is: ["+config['min_tlen']+":"+config['max_tlen']+"]")
 
 #### Setting up the reference gene set ####
 default_reference = config["organism_gtf"]

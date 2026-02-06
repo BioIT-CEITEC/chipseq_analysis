@@ -996,3 +996,32 @@ rule prepare_pseudo_reps:
             prefix = "mapped/pseudo/{cond}_rep",
     conda:  "../wrappers/prepare_pseudo_reps/env.yaml"
     script: "../wrappers/prepare_pseudo_reps/script.py"
+
+
+#def filter_bam_input(wc):
+#    inputs = {'bam': "mapped/{sample}{extra}.bam"}
+#    bed = config["reference_dir"] + "/others/ChIP-seq/blacklist.v2.bed"
+#    if config['bam_remove_blacklisted'] and os.path.isfile(bed):
+#        inputs['bed'] = bed
+#        print("## INFO: Using ChIP-seq blacklist: "+bed)
+#    else:
+#        print("## INFO: Not using ChIP-seq blacklist!")
+#    return inputs
+
+rule filter_bam:
+    input:  bam = "mapped/{sample}{extra}.bam",
+            bed = "mapped/filter_regions.bed",
+    output: bam = "mapped/{sample}.{dups}{extra}.bam",
+    log:    "logs/{sample}/filter_bam.{dups}{extra}.log"
+    threads: 5
+    params: prefix = "mapped/{sample}{extra}",
+            bam_fail = "mapped/{sample}.{dups}{extra}.filt_out.bam",
+#            remove_blacklisted = config['bam_remove_blacklisted'],
+#            ignore_regions = config['ignore_regions'],
+            keep_dups = config['keep_duplicates'],
+            min_tlen = config['min_tlen'],
+            max_tlen = config['max_tlen'],
+            min_mapq = config['min_mapq'],
+            tmpd = GLOBAL_TMPD_PATH,
+    conda:  "../wrappers/filter_bam/env.yaml"
+    script:  "../wrappers/filter_bam/script.py"
