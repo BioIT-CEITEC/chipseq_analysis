@@ -61,10 +61,10 @@ if 'blacklist' in config['ignore_regions'] or 'blcklist' in config['ignore_regio
     print("## INFO: Adding all blacklisted regions from ENCODE's blacklist ("+blck_bed+") into ignore_regions BED file.")
     shutil.copy(blck_bed, filter_regions_bed)
   else:
-    print("## INFO: The ENCODE's blacklist BED was not found. Creating an empty ignore_regions BED file.)
+    print("## INFO: The ENCODE's blacklist BED was not found. Creating an empty ignore_regions BED file.")
     open(filter_regions_bed, 'x').close()
 else:
-  print("## INFO: Creating an empty ignore_regions BED file.)
+  print("## INFO: Creating an empty ignore_regions BED file.")
   config['bam_remove_blacklisted'] = false
   open(filter_regions_bed, 'x').close()
 ## add all non-main chromosomes into ignore_regions bed if asked for
