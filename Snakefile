@@ -55,7 +55,7 @@ reserved_words = ['blacklist','blcklist','blacklst','not_chr','non_chr']
 filter_regions_bed = "mapped/filter_regions.bed"
 ## add all blacklisted regions from ENCODE's list into ignore_regions bed if asked for
 if 'blacklist' in config['ignore_regions'] or 'blcklist' in config['ignore_regions'] or 'blacklst' in config['ignore_regions']:
-  config['bam_remove_blacklisted'] = true
+  config['bam_remove_blacklisted'] = True
   blck_bed = config['reference_dir']+"/others/ChIP-seq/blacklist.v2.bed"
   if os.path.isfile(blck_bed):
     print("## INFO: Adding all blacklisted regions from ENCODE's blacklist ("+blck_bed+") into ignore_regions BED file.")
@@ -65,7 +65,7 @@ if 'blacklist' in config['ignore_regions'] or 'blcklist' in config['ignore_regio
     open(filter_regions_bed, 'x').close()
 else:
   print("## INFO: Creating an empty ignore_regions BED file.")
-  config['bam_remove_blacklisted'] = false
+  config['bam_remove_blacklisted'] = False
   open(filter_regions_bed, 'x').close()
 ## add all non-main chromosomes into ignore_regions bed if asked for
 if 'not_chr' in config['ignore_regions'] or 'non_chr' in config['ignore_regions']:
@@ -95,7 +95,7 @@ else:
   val = [abs(int(float(v))) for v in config['tlen_range'].replace(" ", "").split(',') ]
   config['min_tlen'] = min(val)
   config['max_tlen'] = max(val)
-print("## INFO: Valid range of reads template length is: ["+config['min_tlen']+":"+config['max_tlen']+"]")
+print("## INFO: Valid range of reads template length is: ["+str(config['min_tlen'])+":"+str(config['max_tlen'])+"]")
 
 #### Setting up the reference gene set ####
 default_reference = config["organism_gtf"]
