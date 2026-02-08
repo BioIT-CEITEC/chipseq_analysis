@@ -81,7 +81,7 @@ if 'not_chr' in config['ignore_regions'] or 'non_chr' in config['ignore_regions'
 with open(filter_regions_bed, 'a') as b:
   print("## INFO: Adding all user-specified genomic regions into ignore_regions BED file.")
   for reg in config['ignore_regions'].split(','):
-    if not reg in reserved_words:
+    if not any([a == reg for a in reserved_words]):
       b.write(reg+'\t0\t99999999999\n')
 
 ## Process tlen_range and define proper min_tlen and max_tlen in the config
