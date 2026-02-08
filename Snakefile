@@ -107,6 +107,7 @@ print(gene_sets)
 
 #### Setting up wildcard constraints ####
 wildcard_constraints:
+    extra=".spike|",
     # sample = "|".join(sample_tab.sample_name) + "|all_samples",
     dups="no_dups|keep_dups"
 
