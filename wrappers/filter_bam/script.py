@@ -27,8 +27,8 @@ if not snakemake.params.keep_dups:
 command = "$(which time) samtools view"+\
           " -@ "+str(snakemake.threads)+\
           " -q "+str(snakemake.params.min_mapq)+\
-          " -e 'tlen < "+str(snakemake.params.max_tlen)+" && tlen > -"+str(snakemake.params.max_tlen)+\
-           " && tlen > "+str(snakemake.params.min_tlen)+" && tlen < -"+str(snakemake.params.min_tlen)+"'"+\
+          " -e 'tlen < "+str(snakemake.params.max_tlen)+" && tlen > "+str(snakemake.params.min_tlen)+\
+           " || tlen > -"+str(snakemake.params.max_tlen)+" && tlen < -"+str(snakemake.params.min_tlen)+"'"+\
           " -F "+str(bad_tags)+\
           " -b -h "+snakemake.input.bam+\
           " 2>> "+log_filename+\
