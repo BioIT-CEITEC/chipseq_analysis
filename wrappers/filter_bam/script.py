@@ -20,17 +20,19 @@ f = open(log_filename, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-bad_tags = 2820 # read_unmapped + not_primary_alignment + read_fails_platform/vendor_quality_checks + supplementary_alignment
+bad_tags = 2828 # read_unmapped + mate_unmapped + not_primary_alignment + read_fails_platform/vendor_quality_checks + supplementary_alignment
 if not snakemake.params.keep_dups:
   bad_tags += 1024 # read_is_PCR_or_optical_duplicate
 
+## Myslim ze by vsetky filtre mali byt prevedene na -e formu a musi sa pridat kontrola na PE a vetveni kvoli kontrole tlen
 command = "$(which time) samtools view"+\
           " -@ "+str(snakemake.threads)+\
           " -q "+str(snakemake.params.min_mapq)+\
-          " -e 'tlen < "+str(snakemake.params.max_tlen)+" && tlen > "+str(snakemake.params.min_tlen)+\
-           " || tlen > -"+str(snakemake.params.max_tlen)+" && tlen < -"+str(snakemake.params.min_tlen)+"'"+\
+          " -e '(!flag.paired && tlen == 0) || (flag.paired && tlen != 0 && ((tlen <= "+str(snakemake.params.max_tlen)+" && tlen >= "+str(snakemake.params.min_tlen)+\
+           ") || (tlen >= -"+str(snakemake.params.max_tlen)+" && tlen <= -"+str(snakemake.params.min_tlen)+")))'"+\
           " -F "+str(bad_tags)+\
           " -b -h "+snakemake.input.bam+\
+          " -U "+snakemake.params.bam_fail+\
           " 2>> "+log_filename+\
           " | "+\
           "$(which time) samtools view"+\
@@ -38,7 +40,7 @@ command = "$(which time) samtools view"+\
           " -L "+snakemake.input.bed+\
           " -U "+snakemake.output.bam+\
           " -b -h -"+\
-          " > "+snakemake.params.bam_fail+\
+          " >> "+snakemake.params.bam_fail+\
           " 2>> "+log_filename
 f = open(log_filename, 'at')
 f.write("## COMMAND: "+command+"\n")
