@@ -31,8 +31,8 @@ command = "$(which time) samtools view"+\
           " -e '(!flag.paired && tlen == 0) || (flag.paired && tlen != 0 && ((tlen <= "+str(snakemake.params.max_tlen)+" && tlen >= "+str(snakemake.params.min_tlen)+\
            ") || (tlen >= -"+str(snakemake.params.max_tlen)+" && tlen <= -"+str(snakemake.params.min_tlen)+")))'"+\
           " -F "+str(bad_tags)+\
-          " -b -h "+snakemake.input.bam+\
           " -U "+snakemake.params.bam_fail+\
+          " -b -h "+snakemake.input.bam+\
           " 2>> "+log_filename+\
           " | "+\
           "$(which time) samtools view"+\
