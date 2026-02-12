@@ -24,12 +24,17 @@ bad_tags = 2828 # read_unmapped + mate_unmapped + not_primary_alignment + read_f
 if not snakemake.params.keep_dups:
   bad_tags += 1024 # read_is_PCR_or_optical_duplicate
 
-## Myslim ze by vsetky filtre mali byt prevedene na -e formu a musi sa pridat kontrola na PE a vetveni kvoli kontrole tlen
+# use tlen filter only for IP treated samples
+tlen_filter = ""
+if not snakemake.params.is_ctrl and not snakemake.params.is_spike:
+  tlen_filter = " -e '(!flag.paired && qlen-sclen-hclen <= "+str(snakemake.params.max_tlen)+" && qlen-sclen-hclen >= "+str(snakemake.params.min_tlen)+\
+                ") || (flag.paired && tlen != 0 && ((tlen <= "+str(snakemake.params.max_tlen)+" && tlen >= "+str(snakemake.params.min_tlen)+\
+                ") || (tlen >= -"+str(snakemake.params.max_tlen)+" && tlen <= -"+str(snakemake.params.min_tlen)+")))'"
+
 command = "$(which time) samtools view"+\
           " -@ "+str(snakemake.threads)+\
           " -q "+str(snakemake.params.min_mapq)+\
-          " -e '(!flag.paired && tlen == 0) || (flag.paired && tlen != 0 && ((tlen <= "+str(snakemake.params.max_tlen)+" && tlen >= "+str(snakemake.params.min_tlen)+\
-           ") || (tlen >= -"+str(snakemake.params.max_tlen)+" && tlen <= -"+str(snakemake.params.min_tlen)+")))'"+\
+          tlen_filter+\
           " -F "+str(bad_tags)+\
           " -U "+snakemake.params.bam_fail+\
           " -b -h "+snakemake.input.bam+\
