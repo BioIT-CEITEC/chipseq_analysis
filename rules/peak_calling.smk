@@ -973,11 +973,11 @@ rule convert_bam_to_bedgraph:
     script: "../wrappers/convert_bam_to_bedgraph/script.py"
 
 
-rule index_bam:
-    input:  "mapped/{file}.bam",
-    output: "mapped/{file}.bam.bai",
-    conda:  "../wrappers/call_macs2/env.yaml"
-    shell: "samtools index {input}"
+#rule index_bam:
+#    input:  "mapped/{file}.bam",
+#    output: "mapped/{file}.bam.bai",
+#    conda:  "../wrappers/call_macs2/env.yaml"
+#    shell: "samtools index {input}"
     
 
 rule prepare_pseudo_reps:
