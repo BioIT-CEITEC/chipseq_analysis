@@ -1010,7 +1010,7 @@ rule filter_bam:
             min_tlen = config['min_tlen'],
             max_tlen = config['max_tlen'],
             min_mapq = config['min_mapq'],
-            is_ctrl = lambda wc: sample_tab.loc[sample_tab.name==wc.sample, 'is_control'].item(),
+            is_ctrl = lambda wc: sample_tab.loc[sample_tab.sample_name==wc.sample, 'is_control'].item(),
             is_spike= lambda wc: "spike" in wc.extra,
             tmpd = GLOBAL_TMPD_PATH,
     conda:  "../wrappers/filter_bam/env.yaml"
