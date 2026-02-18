@@ -1002,6 +1002,7 @@ rule filter_bam:
     input:  bam = "mapped/{sample}{extra}.bam",
             bed = "mapped/filter_regions.bed",
     output: bam = "mapped/{sample}.{dups}{extra}.bam",
+            bai = "mapped/{sample}.{dups}{extra}.bam.bai",
     log:    "logs/{sample}/filter_bam.{dups}{extra}.log"
     threads: 5
     params: prefix = "mapped/{sample}{extra}",
