@@ -24,7 +24,7 @@ inputs = list(snakemake.input.trt)
 if hasattr(snakemake.input, 'ctl'):
   input_line += " -c "+" ".join(snakemake.input.ctl)
   inputs += list(snakemake.input.ctl)
-  
+
 # First we need to check if input files are paired-end (by default) or single-end
 paired = True
 for inp in inputs:
@@ -39,13 +39,13 @@ for inp in inputs:
     if int(flag)%2==0:
         paired = False
         break
-      
+
 if snakemake.params.spikein:
   # In case of spike-in normalisation the input files need to be normalised and converted into bedgraph explicitly
   spike_inputs = list(snakemake.input.trt_spike)
   if hasattr(snakemake.input, 'ctl_spike'):
     spike_inputs += list(snakemake.input.ctl_spike)
-    
+
   for i in range(len(spike_inputs)):
     bam = inputs[i]
     bdg = os.path.join(snakemake.params.dir, os.path.basename(bam).replace('.bam','.bedgraph'))
@@ -54,7 +54,7 @@ if snakemake.params.spikein:
     if paired:
       ## Flag 2816 is combination of 1) not primary alignment, 2) read fails platform/vendor quality checks and 3) supplementary alignment; which we don't want
       command = "$(which time) --verbose samtools view -c -f 66 -F 2816 -@ "+str(snakemake.threads)+" "+sbam+" 2>> "+snakemake.log.run
-    else: 
+    else:
       command = "$(which time) --verbose samtools view -c -F 2816 -@ "+str(snakemake.threads)+" "+sbam+" 2>> "+snakemake.log.run
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
@@ -63,22 +63,41 @@ if snakemake.params.spikein:
     scaling_spikein = round(float(snakemake.params.scalefac)/int(spike_frags), 8)
     f.write("## INFO: Spike-in scale factor: "+str(scaling_spikein)+"\n")
     f.close()
-      
+
+    if str(snakemake.params.frag_len) == 'unk':
+      command = "$(which time) --verbose macs2 predictd"+\
+                " -i "+bam+\
+                " -g "+snakemake.params.effective_GS+\
+                " 2>&1 | tee -a "+snakemake.log.run
+      f = open(snakemake.log.run, 'at')
+      f.write("## COMMAND: "+command+"\n")
+      predictd_out = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
+      f.write("## INFO: macs2 predictd output is:"+predictd_out+"\n")
+#      f.write("## INFO: file "+inp+" is "+("paired-end" if int(flag)%2==1 else "single-end")+"\n")
+      f.close()
+
     # Converting BAM file into BED file containing only reads properly aligned as primary (and paired, if possible)
     if paired:
+      # TODO: consider running `macs2 preditd` or using config['fragment_length'] to extend the insert size if shorter
       command = "$(which time) --verbose samtools view -uh -f 2 -F 2816 -@ "+str(snakemake.threads)+" "+bam+" 2>> "+snakemake.log.run+\
                 " | $(which time) --verbose samtools sort -n -@ "+str(snakemake.threads)+" 2>> "+snakemake.log.run+\
                 " | $(which time) --verbose bedtools bamtobed -bedpe -i stdin 2>> "+snakemake.log.run+\
                 " | awk '$1==$4' 2>> "+snakemake.log.run+\
                 " | cut -f 1,2,6 | $(which time) --verbose sort -k1,1 -k2,2n -k3,3n 2>> "+snakemake.log.run+" > "+snakemake.params.bed
-    else: 
+      f = open(snakemake.log.run, 'at')
+      f.write("## COMMAND: "+command+"\n")
+      f.close()
+      shell(command)
+    else:
       # TODO: Here should be an extraction of single-end bed file from BAM following by extension using macs2 pileup (https://github.com/macs3-project/MACS/wiki/Advanced:-Call-peaks-using-MACS2-subcommands#step-3-extend-chip-sample-to-get-chip-coverage-track)
+      #       use bedtools bamtobed to extract filtered reads in BED format, then if it's IP sample, extend the SE read to the d (fragment) length on 3'end considering the strand or half-d length on both sides if it's control sample.
+      #       The d length is taken either from config['fragment_length'] if it's a number or from `macs2 preditd` command if it's 'unk'.
       command = "echo 'Single-end input with spike-in normalisation is not prepared for MACS yet!'"
-    f = open(snakemake.log.run, 'at')
-    f.write("## COMMAND: "+command+"\n")
-    f.close()
-    shell(command)
-    
+      f = open(snakemake.log.run, 'at')
+      f.write("## COMMAND: "+command+"\n")
+      f.close()
+      shell(command)
+
     # Converting BED file into bedgraph track file for peak calling
     if bam in snakemake.input.trt:
       # This case is for converting treatment (ChIP) samples into bedgraph track file for peak calling
