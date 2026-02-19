@@ -59,7 +59,7 @@ if snakemake.params.spikein:
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     spike_frags = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-    f.write("## INFO: Spike-in fragments: "+str(spike_frags)+"\n")
+    f.write("## INFO: Spike-in fragments: "+str(spike_frags))
     scaling_spikein = round(float(snakemake.params.scalefac)/int(spike_frags), 8)
     f.write("## INFO: Spike-in scale factor: "+str(scaling_spikein)+"\n\n")
     f.close()
@@ -103,7 +103,7 @@ if snakemake.params.spikein:
       #       The d length is taken either from config['fragment_length'] if it's a number or from `macs2 preditd` command if it's 'unk'.
       command = "$(which time) --verbose bedtools bamtobed -i "+bam+\
                 " 2>> "+snakemake.log.run+\
-                " | awk '{{ if($3-$2 < "+str(dlen)+") $3=$2+"+str(dlen)+"; print $0 }}' OFS='\t' >> "+snakemake.log.run+\
+                " | awk '{{ if($3-$2 < "+str(dlen)+") $3=$2+"+str(dlen)+"; print $0 }}' OFS='\t' 2>> "+snakemake.log.run+\
                 " | $(which time) --verbose sort -k1,1 -k2,2n -k3,3n 2>> "+snakemake.log.run+" > "+snakemake.params.bed
       f = open(snakemake.log.run, 'at')
       f.write("## COMMAND: "+command+"\n")
