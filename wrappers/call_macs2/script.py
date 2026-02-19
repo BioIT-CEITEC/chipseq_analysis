@@ -33,8 +33,8 @@ for inp in inputs:
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     flag = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-    f.write("## FLAG:"+flag+"\n")
-    f.write("## INFO: file "+inp+" is "+("paired-end" if int(flag)%2==1 else "single-end")+"\n")
+    f.write("## FLAG:"+flag)
+    f.write("## INFO: file "+inp+" is "+("paired-end" if int(flag)%2==1 else "single-end")+"\n\n")
     f.close()
     if int(flag)%2==0:
         paired = False
@@ -61,19 +61,28 @@ if snakemake.params.spikein:
     spike_frags = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
     f.write("## INFO: Spike-in fragments: "+str(spike_frags)+"\n")
     scaling_spikein = round(float(snakemake.params.scalefac)/int(spike_frags), 8)
-    f.write("## INFO: Spike-in scale factor: "+str(scaling_spikein)+"\n")
+    f.write("## INFO: Spike-in scale factor: "+str(scaling_spikein)+"\n\n")
     f.close()
 
-    if str(snakemake.params.frag_len) == 'unk':
+    dlen = snakemake.params.frag_len
+    if str(dlen) == 'unk':
       command = "$(which time) --verbose macs2 predictd"+\
                 " -i "+bam+\
                 " -g "+snakemake.params.effective_GS+\
                 " 2>&1 | tee -a "+snakemake.log.run
       f = open(snakemake.log.run, 'at')
       f.write("## COMMAND: "+command+"\n")
+      f.flush()
       predictd_out = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-      f.write("## INFO: macs2 predictd output is:"+predictd_out+"\n")
-#      f.write("## INFO: file "+inp+" is "+("paired-end" if int(flag)%2==1 else "single-end")+"\n")
+      for line in predictd_out.split('\n'):
+        if '# predicted fragment length is' in line:
+          dlen = re.findall('^.*# predicted fragment length is (-?[0-9]+).*$',line)[0]
+      f.write("## INFO: predicted fragment length (d-length) is:"+dlen+"\n\n")
+      f.close()
+    else:
+      dlen = int(float(dlen))
+      f = open(snakemake.log.run, 'at')
+      f.write("## INFO: explicit fragment length (d-length) is: "+str(dlen)+"\n\n")
       f.close()
 
     # Converting BAM file into BED file containing only reads properly aligned as primary (and paired, if possible)
@@ -92,11 +101,16 @@ if snakemake.params.spikein:
       # TODO: Here should be an extraction of single-end bed file from BAM following by extension using macs2 pileup (https://github.com/macs3-project/MACS/wiki/Advanced:-Call-peaks-using-MACS2-subcommands#step-3-extend-chip-sample-to-get-chip-coverage-track)
       #       use bedtools bamtobed to extract filtered reads in BED format, then if it's IP sample, extend the SE read to the d (fragment) length on 3'end considering the strand or half-d length on both sides if it's control sample.
       #       The d length is taken either from config['fragment_length'] if it's a number or from `macs2 preditd` command if it's 'unk'.
-      command = "echo 'Single-end input with spike-in normalisation is not prepared for MACS yet!'"
+      command = "$(which time) --verbose bedtools bamtobed -i "+bam+\
+                " 2>> "+snakemake.log.run+\
+                " | awk '{{ if($3-$2 < "+str(dlen)+") $3=$2+"+str(dlen)+"; print $0 }}' OFS='\t' >> "+snakemake.log.run+\
+                " | $(which time) --verbose sort -k1,1 -k2,2n -k3,3n 2>> "+snakemake.log.run+" > "+snakemake.params.bed
       f = open(snakemake.log.run, 'at')
       f.write("## COMMAND: "+command+"\n")
       f.close()
       shell(command)
+
+      exit("Not finished yet!")
 
     # Converting BED file into bedgraph track file for peak calling
     if bam in snakemake.input.trt:
@@ -109,7 +123,7 @@ if snakemake.params.spikein:
       f.write("## COMMAND: "+command+"\n")
       f.close()
       shell(command)
-      
+
     elif bam in snakemake.input.ctl:
       # This case is for converting control samples into lambda bedgraph track file for peak calling (more complicated because of all lambda tracks)
       # Extraction of fragment-length background
