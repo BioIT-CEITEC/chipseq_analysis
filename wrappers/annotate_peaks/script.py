@@ -20,6 +20,21 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
+dtypes = {
+  "chr": 'str',
+  "start": 'int',
+  "end": 'int',
+  "peak_id": 'str',
+  "score": 'float',
+  "strand": 'str',
+  "signal": 'float',
+  "pvalue": 'float',
+  "qvalue": 'float',
+  "summit": 'int',
+  "summit_cov": 'float',
+  "summit_pos": 'str'
+}
+
 if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
     command = "TMP=TMPDIR=TEMP="+snakemake.params.tmpd+" $(which time) annotatePeaks.pl"+\
               " "+snakemake.input.bed+\
@@ -37,9 +52,9 @@ if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.inpu
     with open(snakemake.log.run, 'at') as f:
         f.write("## NOTE: merging "+snakemake.output.tsv+" with "+snakemake.input.bed+"\n")
     if snakemake.wildcards.tool == "SEACR":
-      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","summit_cov","summit_pos"])
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","summit_cov","summit_pos"], dtype=dtypes, skiprows=sum(1 for line in open(snakemake.input.bed, 'r') if line.startswith('track')))
     else:
-      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue","summit"])
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue","summit"], dtype=dtypes, skiprows=sum(1 for line in open(snakemake.input.bed, 'r') if line.startswith('track')))
     new = pandas.read_csv(snakemake.output.tsv, sep="\t", header=0)
     new.rename(columns={new.columns[0]:"peak_id"}, inplace=True)
     new.rename(columns=lambda s:s.replace(" ","_"), inplace=True)
