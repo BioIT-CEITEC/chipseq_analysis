@@ -185,7 +185,7 @@ if snakemake.params.spikein:
       print("ERROR: file "+bam+" is neither in input trt nor in input ctl files!")
       print(exit)
       exit()
-      
+
   if len(snakemake.input.trt) > 1:
     command = "$(which time) --verbose macs2 cmbreps -i "+\
               " ".join([os.path.join(snakemake.params.dir, os.path.basename(i).replace('.bam','.bedgraph')) for i in snakemake.input.trt])+\
@@ -197,7 +197,7 @@ if snakemake.params.spikein:
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-  
+
   if len(snakemake.input.ctl) > 1:
     command = "$(which time) --verbose macs2 cmbreps -i "+\
               " ".join([os.path.join(snakemake.params.dir, os.path.basename(i).replace('.bam','.bedgraph')) for i in snakemake.input.ctl])+\
@@ -209,7 +209,7 @@ if snakemake.params.spikein:
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-  
+
   # TODO: add the branching for broadpeaks
   final_track = os.path.join(snakemake.params.dir, snakemake.params.name) + '.qpois.bdg'
   command = "$(which time) --verbose macs2 bdgcmp -t "+snakemake.output.trt_bdg+" -c "+snakemake.output.ctl_bdg+" -m qpois -o "+final_track+" 2>> "+snakemake.log.run
@@ -217,7 +217,7 @@ if snakemake.params.spikein:
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-  
+
   try:
     cutoff_stats = final_track.replace('.bdg', '.cutoff_stats')
     command = "$(which time) --verbose macs2 bdgpeakcall -i "+final_track+" --cutoff-analysis -c 1 -l 115 -g 75 -o "+cutoff_stats+" 2>> "+snakemake.log.run

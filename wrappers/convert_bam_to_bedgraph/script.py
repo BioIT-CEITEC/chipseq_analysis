@@ -24,15 +24,16 @@ paired = True
 command = 'samtools view '+snakemake.input.bam+' 2>> '+log_filename+' | head -1 2>> '+log_filename+' | cut -f 2 2>> '+log_filename
 f = open(log_filename, 'at')
 f.write("## COMMAND: "+command+"\n")
+f.flush()
 flag = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-f.write("## FLAG:"+flag+"\n")
-f.write("## INFO: file "+snakemake.input.bam+" is "+("paired-end" if int(flag)%2==1 else "single-end")+"\n")
+f.write("## FLAG:"+flag)
+f.write("## INFO: file "+snakemake.input.bam+" is "+("paired-end" if int(flag)%2==1 else "single-end")+"\n\n")
 f.close()
 if int(flag)%2==0:
     paired = False
-  
-scaling_infix = ""  
-if snakemake.params.spikein:    
+
+scaling_infix = ""
+if snakemake.params.spikein:
   if paired:
     command = "$(which time) --verbose samtools view -uh -e 'flag.proper_pair' -@ "+str(snakemake.threads)+" "+snakemake.input.sbam+" 2>> "+log_filename+\
               " | $(which time) --verbose samtools sort -n -@ "+str(snakemake.threads)+" 2>> "+log_filename+\
@@ -40,18 +41,19 @@ if snakemake.params.spikein:
               " | awk '$1==$4' 2>> "+log_filename+\
               " | wc -l 2>> "+log_filename+\
               " | cut -f 1 -d ' ' 2>> "+log_filename
-  else: 
+  else:
     command = "$(which time) --verbose samtools view -c -@ "+str(snakemake.threads)+" "+snakemake.input.sbam+" 2>> "+log_filename
   f = open(log_filename, 'at')
   f.write("## COMMAND: "+command+"\n")
+  f.flush()
   spike_frags = str(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0], 'utf-8')
-  f.write("## INFO: Spike-in fragments: "+str(spike_frags)+"\n")
+  f.write("## INFO: Spike-in fragments: "+str(spike_frags))
   scale_factor = round(float(snakemake.params.scalefac)/int(spike_frags), 8)
-  f.write("## INFO: Spike-in scale factor: "+str(scale_factor)+"\n")
+  f.write("## INFO: Spike-in scale factor: "+str(scale_factor)+"\n\n")
   f.close()
-  
+
   scaling_infix = " -scale "+str(scale_factor)
-  
+
 if paired:
   command = "$(which time) --verbose samtools view -uh -e 'flag.proper_pair' -@ "+str(snakemake.threads)+" "+snakemake.input.bam+" 2>> "+log_filename+\
             " | $(which time) --verbose samtools sort -n -@ "+str(snakemake.threads)+" 2>> "+log_filename+\
