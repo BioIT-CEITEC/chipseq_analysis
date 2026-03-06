@@ -98,19 +98,17 @@ if snakemake.params.spikein:
       f.close()
       shell(command)
     else:
-      # TODO: Here should be an extraction of single-end bed file from BAM following by extension using macs2 pileup (https://github.com/macs3-project/MACS/wiki/Advanced:-Call-peaks-using-MACS2-subcommands#step-3-extend-chip-sample-to-get-chip-coverage-track)
-      #       use bedtools bamtobed to extract filtered reads in BED format, then if it's IP sample, extend the SE read to the d (fragment) length on 3'end considering the strand or half-d length on both sides if it's control sample.
-      #       The d length is taken either from config['fragment_length'] if it's a number or from `macs2 preditd` command if it's 'unk'.
+      # For SE data, the aligned reads must be extended if shorter than the (estimated) fragment length (https://github.com/macs3-project/MACS/wiki/Advanced:-Call-peaks-using-MACS2-subcommands#step-3-extend-chip-sample-to-get-chip-coverage-track)
+      # Extends the SE read to the d (fragment) length on 3'end considering the strand.
+      # The d length is taken either from config['fragment_length'] if it's a number or from `macs2 preditd` command if it's 'unk'.
       command = "$(which time) --verbose bedtools bamtobed -i "+bam+\
                 " 2>> "+snakemake.log.run+\
-                " | awk '{{ if($3-$2 < "+str(dlen)+") $3=$2+"+str(dlen)+"; print $0 }}' OFS='\t' 2>> "+snakemake.log.run+\
+                " | awk '{{ if($3-$2 < dlen) {{ if($6 == \"-\") {{ $2=($3-dlen<0?0:$3-dlen) }} else {{ $3=$2+dlen }} }}; print $0 }}' dlen="+str(dlen)+" OFS='\t' 2>> "+snakemake.log.run+\
                 " | $(which time) --verbose sort -k1,1 -k2,2n -k3,3n 2>> "+snakemake.log.run+" > "+snakemake.params.bed
       f = open(snakemake.log.run, 'at')
       f.write("## COMMAND: "+command+"\n")
       f.close()
       shell(command)
-
-      exit("Not finished yet!")
 
     # Converting BED file into bedgraph track file for peak calling
     if bam in snakemake.input.trt:
@@ -147,7 +145,7 @@ if snakemake.params.spikein:
       f.close()
       shell(command)
       # Extraction of llocal background
-      scaling_local = 0.04 # This value is important, because we extend every fragment in bed file five times of its original length, therefore, the pile-up must be scaled down to one fifth
+      scaling_local = 0.04 # This value is important, because we extend every fragment in bed file twenty-five times of its original length, therefore, the pile-up must be scaled down to one twenty-fifth
       bdg_llocal = os.path.join(snakemake.params.dir, os.path.basename(bam).replace('.bam','.llocal_bg.bedgraph'))
       command = "$(which time) --verbose awk '{{ext=12*($3-$2); print $1, ($2-ext<0)?0:$2-ext, $3+ext}}' OFS='\t' "+snakemake.params.bed+" 2>> "+snakemake.log.run+\
                 " | $(which time) --verbose sort -k1,1 -k2,2n -k3,3n 2>> "+snakemake.log.run+\
