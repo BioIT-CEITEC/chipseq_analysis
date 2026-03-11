@@ -40,51 +40,6 @@
   ],
   "gui_params" : {
     "primary": {
-      "organism": {
-        "label": "Organism",
-        "type": "enum",
-        "dynamicEnumName": "organism"
-      },
-      "assembly": {
-        "label": "Genomic Reference Assembly",
-        "type": "enum",
-        "dynamicEnumName": "assembly",
-        "filters": {
-          "group": {
-            "param": "organism",
-            "type": "value",
-            "showGroupLabel": false
-          }
-        }
-      },
-      "release": {
-        "type": "constant",
-        "default": "UNK_UNK"
-      },
-      "protocol": {
-        "label": "Library preparation",
-        "info": "Select the library preparation protocol to help configure some default values.",
-        "type": "enum",
-        "default": "chipseq",
-        "list": {
-          "chipseq": "ChIP-seq",
-          "car": "Cut&Run"
-        }
-      },
-      "spikein": {
-        "label": "Use spike-in normalization",
-        "info": "Decide, if to do aditional alignment to E. coli spike-in genome. It's used in downstream analysis for explicit normalisation of samples.",
-        "type": "bool",
-        "default": false,
-        "conditions": {
-          "value": {
-            "protocol": {
-              "chipseq": false,
-              "car": true
-            }
-          }
-        }
-      },
       "spike_scale_factor": {
         "label": "Spike-in scale factor",
         "info": "During spike-in normalisation, the primary read counts (mapped to selected genomic reference) are normalised according to the the spike-in read counts (mapped to the spike-in genome) as the primary genome to spike-in genome ratio per cell is expected to be the same for all samples. However, these 2 numbers usually differ by several orders of magnitude so the spike-in scale factor should be arbitrary large number to scale the ratio coefficient.",
@@ -99,7 +54,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "detailed": {
       "keep_duplicates": {
         "label": "Keep all duplicates (reads filter)",
         "info": "In ChIP-seq analysis, it is recommended to remove all duplicates (because of the randomness in fragmentation during library preparation) while in Cut&Run analysis it's not necessary (depending on the library size and targeted region).",
@@ -113,9 +70,7 @@
             }
           }
         }
-      }
-    },
-    "detailed": {
+      },
       "tlen_range": {
         "label": "Allowed template length (reads filter)",
         "info": "Allowed range of reads template length (TLEN). Other reads will be removed. For example, for Cut&Run protocol, it matters if template length is shorter than 120 bps if looking for TF binding sites. It's expected to be comma-separated pair of integers or just one number assumed to be maximum with 0 as minimum.",
