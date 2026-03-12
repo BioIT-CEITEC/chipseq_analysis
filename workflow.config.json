@@ -36,7 +36,8 @@
     "organism",
     "assembly",
     "release",
-    "protocol"
+    "protocol",
+    "spikein"
   ],
   "gui_params" : {
     "primary": {
