@@ -276,6 +276,7 @@ else:
   if snakemake.params.broad:
     broad_params = "--broad --broad-cutoff "+str(snakemake.params.brcut)
 
+  # Call MACS2 to do peak-calling
   command = "$(which time) macs2 callpeak "+input_line+\
             " --keep-dup "+keep_dups+\
             " -g "+str(snakemake.params.effective_GS)+\
@@ -312,7 +313,10 @@ else:
   shell(command)
 
   # rename original output file with no cutof
-  command = "mv "+snakemake.params.sum_tab+" "+snakemake.output.sum_tab_all+" >> "+snakemake.log.run+" 2>&1"
+  if snakemake.params.broad:
+    command = "mv "+snakemake.params.gap_tab+" "+snakemake.output.sum_tab_all+" >> "+snakemake.log.run+" 2>&1"
+  else:
+    command = "mv "+snakemake.params.sum_tab+" "+snakemake.output.sum_tab_all+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
