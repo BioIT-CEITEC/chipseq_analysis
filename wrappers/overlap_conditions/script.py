@@ -39,6 +39,7 @@ command = "(time Rscript "+snakemake.params.rscript+\
           " "+snakemake.wildcards.tool+\
           " "+str(snakemake.params.fdr_cutof)+\
           " "+str(snakemake.params.l2fc_cutof)+\
+          " "+("broad" if snakemake.params.broad_peaks else "narrow")+\
           ") >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")

@@ -314,6 +314,7 @@ rule overlap_conditions:
     params: rscript = workflow.basedir+"/wrappers/overlap_conditions/overlap_peaks.R",
             odir = "results/{consensus_type}/{c1}_vs_{c2}",
             comparison = "{c1}_vs_{c2}",
+            broad_peaks = config["macs_broad_peaks"],
             fdr_cutof = config['diff_fdr_cutof'],
             l2fc_cutof= config['diff_l2fc_cutof'],
     conda:  "../wrappers/overlap_conditions/env.yaml"
@@ -768,6 +769,7 @@ rule annotate_peaks:
     resources: mem = 5
     params: rscript = workflow.basedir+"/wrappers/annotate_peaks/plots_and_stats.R",
             fdr_cutof = config["macs_padj_filter"],
+            broad_peaks = config["macs_broad_peaks"],
             best = config["top_peaks"],
             tmpd = GLOBAL_TMPD_PATH,
     conda:  "../wrappers/annotate_peaks/env.yaml"
