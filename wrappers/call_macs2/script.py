@@ -271,18 +271,12 @@ else:
   else:
     nomodel = "--nomodel --extsize "+str(snakemake.params.frag_len)
 
-  # Set the broad peaks parameters
-  broad_params = ""
-  if snakemake.params.broad:
-    broad_params = "--broad --broad-cutoff "+str(snakemake.params.brcut)
-
   command = "$(which time) macs2 callpeak "+input_line+\
             " --keep-dup "+keep_dups+\
             " -g "+str(snakemake.params.effective_GS)+\
             " --outdir "+snakemake.params.dir+\
             " --name "+snakemake.params.name+\
             " "+nomodel+\
-            " "+broad_params+\
             " --bdg"+\
             " --tempdir "+snakemake.params.temp+\
             " -q 0.1 >> "+snakemake.log.run+" 2>&1"
@@ -297,20 +291,20 @@ else:
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-
+  
   command = "mv "+snakemake.params.ctl_bdg+" "+snakemake.output.ctl_bdg+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-
+  
   # rename original output file
   command = "mv "+snakemake.params.xls_tab+" "+snakemake.output.xls_tab_all+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
   shell(command)
-
+  
   # rename original output file with no cutof
   command = "mv "+snakemake.params.sum_tab+" "+snakemake.output.sum_tab_all+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
@@ -326,11 +320,7 @@ else:
   shell(command)
 
   # rename original output file with no cutof
-  if snakemake.params.broad:
-    temp_peak_tab = snakemake.params.brd_tab
-  else:
-    temp_peak_tab = snakemake.params.nar_tab
-  command = "mv "+temp_peak_tab+" "+snakemake.output.nar_tab_all+" >> "+snakemake.log.run+" 2>&1"
+  command = "mv "+snakemake.params.nar_tab+" "+snakemake.output.nar_tab_all+" >> "+snakemake.log.run+" 2>&1"
   f = open(snakemake.log.run, 'at')
   f.write("## COMMAND: "+command+"\n")
   f.close()
