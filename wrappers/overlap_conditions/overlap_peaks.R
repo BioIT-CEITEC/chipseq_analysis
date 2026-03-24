@@ -25,13 +25,19 @@ comparison = args[8]
 tool = args[9]
 fdr_cutof = as.numeric(args[10])
 l2fc_cutof= as.numeric(args[11])
+broad_or_narrow=args[12]
 
 if(tool == "SEACR") {
   names = c("chr","start","end","name","score","summit_cov","summit_pos")
   classes = c("character","integer","integer","character","numeric","numeric","character")
 } else {
-  names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qval", "rel_summit_pos") # rsp = relative summit position
-  classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
+  if(broad_or_narrow == "narrow") {
+    names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qval", "rel_summit_pos")
+    classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric","numeric")
+  } else {
+    names = c("chr", "start", "end", "name", "score", "strand", "l2fc", "pval", "qval")
+    classes = c("character","integer","integer","character","numeric","character","numeric","numeric","numeric")
+  }
 }
 
 peaks1 = fread(cmd = paste0("grep -vP '^(track|#)' ",c1," | cut -f 1-",length(names)), sep = "\t", col.names = paste0(names,"_1"), key = c("chr_1","start_1","end_1"), colClasses = classes)
@@ -72,8 +78,9 @@ if(tool == "SEACR") {
       summit = summit_pos_1)
   ][order(`#chr`)]
 } else {
-  result = overlapped1[is.na(name_2),
-    .(`#chr` = chr,
+  if(broad_or_narrow == "narrow") {
+    result = overlapped1[is.na(name_2),
+     .(`#chr` = chr,
       start = start_1,
       end = end_1,
       name = name_1,
@@ -83,7 +90,20 @@ if(tool == "SEACR") {
       pval = pval_1,
       qval = qval_1,
       summit = rel_summit_pos_1)
-  ][order(`#chr`)]
+    ][order(`#chr`)]
+  } else {
+    result = overlapped1[is.na(name_2),
+     .(`#chr` = chr,
+      start = start_1,
+      end = end_1,
+      name = name_1,
+      score = score_1,
+      strand = strand_1,
+      l2fc = l2fc_1,
+      pval = pval_1,
+      qval = qval_1)
+    ][order(`#chr`)]
+  }
 }
 fwrite(result,
        tab_s1,
@@ -105,7 +125,8 @@ if(tool == "SEACR") {
       summit = summit_pos_2)
   ][order(`#chr`)]
 } else {
-  result = overlapped2[is.na(name_1),
+  if(broad_or_narrow == "narrow") {
+   result = overlapped2[is.na(name_1),
     .(`#chr` = chr,
       start = start_2,
       end = end_2,
@@ -116,7 +137,20 @@ if(tool == "SEACR") {
       pval = pval_2,
       qval = qval_2,
       summit = rel_summit_pos_2)
-  ][order(`#chr`)]
+   ][order(`#chr`)]
+  } else {
+   result = overlapped2[is.na(name_1),
+    .(`#chr` = chr,
+      start = start_2,
+      end = end_2,
+      name = name_2,
+      score = score_2,
+      strand = strand_2,
+      l2fc = l2fc_2,
+      pval = pval_2,
+      qval = qval_2)
+   ][order(`#chr`)]
+  }
 }
 fwrite(result,
        tab_s2,

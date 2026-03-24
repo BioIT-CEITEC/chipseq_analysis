@@ -314,6 +314,7 @@ rule overlap_conditions:
     params: rscript = workflow.basedir+"/wrappers/overlap_conditions/overlap_peaks.R",
             odir = "results/{consensus_type}/{c1}_vs_{c2}",
             comparison = "{c1}_vs_{c2}",
+            broad_peaks = config["macs_broad_peaks"],
             fdr_cutof = config['diff_fdr_cutof'],
             l2fc_cutof= config['diff_l2fc_cutof'],
     conda:  "../wrappers/overlap_conditions/env.yaml"
@@ -768,6 +769,7 @@ rule annotate_peaks:
     resources: mem = 5
     params: rscript = workflow.basedir+"/wrappers/annotate_peaks/plots_and_stats.R",
             fdr_cutof = config["macs_padj_filter"],
+            broad_peaks = config["macs_broad_peaks"],
             best = config["top_peaks"],
             tmpd = GLOBAL_TMPD_PATH,
     conda:  "../wrappers/annotate_peaks/env.yaml"
@@ -915,7 +917,6 @@ def call_macs2_inputs(wc):
     return inputs
 
 #TODO: zakomponovat pouziti faCounts skriptu na vypocitani effective genome size (cize pocet baz (ACGT) minus pocet N)
-#TODO: zakomponovat pouziti broad_peaks nasavenia
 rule call_macs2:
     input:  unpack(call_macs2_inputs),
     output: trt_bdg = "results/MACS_peaks/{name}/{name}.{dups}.bdg",
@@ -936,10 +937,12 @@ rule call_macs2:
             xls_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.xls",
             sum_tab = "results/MACS_peaks/{name}/{name}.{dups}_summits.bed",
             nar_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.narrowPeak",
+            brd_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.broadPeak",
+            gap_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.gappedPeak",
             effective_GS = config["effective_genome_size"],
             frag_len = config["fragment_length"],
             qval_cutof = config["macs_padj_filter"],
-            broad = config["macs_broad_peaks"], # TODO: doriesit
+            broad = config["macs_broad_peaks"],
             brcut = config["macs_broad_cutof"],
             dir = "results/MACS_peaks/{name}/",
             name= "{name}.{dups}",
