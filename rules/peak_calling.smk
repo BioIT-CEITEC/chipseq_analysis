@@ -44,9 +44,10 @@ def multiqc_report_inputs(wc):
         print("No replicates!")
     if 'conds_to_compare' in config and config['conds_to_compare'] != "" and sample_tab.shape[0] > 1:
         inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config["dups"])
-    inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
-                sample=sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), #+sample_tab.loc[sample_tab.is_control==False, "condition"].unique(),
-                dups=config["dups"])
+## DEMON: ChIPQC started to be difficult to maintain, feel free to repair its wrapper
+#    inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
+#                sample=sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), #+sample_tab.loc[sample_tab.is_control==False, "condition"].unique(),
+#                dups=config["dups"])
     inputs+= expand("results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.pdf",
                 name=samples,
                 dups=config["dups"],
@@ -444,18 +445,6 @@ rule plot_profile_and_heatmap:
     script: "../wrappers/plot_profile_and_heatmap/script.py"
 
 
-# rule compute_matrix_relative:
-#     input:  mtx = ADIR+"/peaks_profile/over_{gene_set}/{name}/{reps}/coverage_matrix.{dups}.mtx.gz",
-#     output: mtx = ADIR+"/peaks_profile/over_{gene_set}/{name}/{reps}/coverage_matrix.{dups}.rel_counts.mtx.gz",
-#     log:    run = ADIR+"/logs/over_{gene_set}/compute_matrix_relative.{name}.{reps}.{dups}.log",
-#     threads: 1
-#     params: smooth = cfg.rel_smooth.min(),
-#             rscript= workflow.basedir+"/../wrappers/compute_matrix_relative/computeMatrix_relative_output.R",
-#             mtx = ADIR+"/peaks_profile/over_{gene_set}/{name}/{reps}/coverage_matrix.{dups}.rel_counts.mtx",
-#     conda:  "../wrappers/compute_matrix_relative/env.yaml"
-#     script: "../wrappers/compute_matrix_relative/script.py"
-
-
 rule compute_matrix:
     input:  bwg = "results/{tool}_peaks/{name}/{name}.{dups}.bigWig",
             ref = "gene_sets/{gs}.gene_set.bed",
@@ -569,24 +558,25 @@ rule plot_FRiP:
     script: "../wrappers/plot_FRiP/script.py"
 
 
-def call_chipqc_inputs(wc):
-    inputs = dict()
-    inputs["peaks"] = f"results/MACS_peaks/{wc.sample}/{wc.sample}.{wc.dups}.peaks.all.narrowPeak"
-    inputs["reads"] = f"mapped/{sample_tab.loc[sample_tab.peaks_name == wc.sample, 'sample_name'].unique()[0]}.{wc.dups}.bam"
-    return inputs
-
-rule call_chipqc:
-    input:  unpack(call_chipqc_inputs),
-    output: html = "results/ChIPQC/{sample}/{sample}.{dups}.report.html",
-            Robj = "results/ChIPQC/{sample}/{sample}.{dups}.report.RData",
-            Rsam = "results/ChIPQC/{sample}/{sample}.{dups}.sample.RData",
-    log:    run = "logs/{sample}/call_chipqc.{dups}.log"
-    params: rscript = workflow.basedir+"/wrappers/call_chipqc/chipqc_sample.R",
-            input_peaks = GLOBAL_TMPD_PATH+"/MACS_peaks.{sample}.{dups}.narrowPeak",
-            odir = "results/ChIPQC/{sample}",
-            prefix="{sample}.{dups}.report"
-    conda:  "../wrappers/call_chipqc/env.yaml"
-    script: "../wrappers/call_chipqc/script.py"
+## DEMON: ChIPQC started to be difficult to maintain, feel free to repair its wrapper
+#def call_chipqc_inputs(wc):
+#    inputs = dict()
+#    inputs["peaks"] = f"results/MACS_peaks/{wc.sample}/{wc.sample}.{wc.dups}.peaks.all.narrowPeak"
+#    inputs["reads"] = f"mapped/{sample_tab.loc[sample_tab.peaks_name == wc.sample, 'sample_name'].unique()[0]}.{wc.dups}.bam"
+#    return inputs
+#
+#rule call_chipqc:
+#    input:  unpack(call_chipqc_inputs),
+#    output: html = "results/ChIPQC/{sample}/{sample}.{dups}.report.html",
+#            Robj = "results/ChIPQC/{sample}/{sample}.{dups}.report.RData",
+#            Rsam = "results/ChIPQC/{sample}/{sample}.{dups}.sample.RData",
+#    log:    run = "logs/{sample}/call_chipqc.{dups}.log"
+#    params: rscript = workflow.basedir+"/wrappers/call_chipqc/chipqc_sample.R",
+#            input_peaks = GLOBAL_TMPD_PATH+"/MACS_peaks.{sample}.{dups}.narrowPeak",
+#            odir = "results/ChIPQC/{sample}",
+#            prefix="{sample}.{dups}.report"
+#    conda:  "../wrappers/call_chipqc/env.yaml"
+#    script: "../wrappers/call_chipqc/script.py"
 
 #########################################
 # Examine Peaks reproducibility
