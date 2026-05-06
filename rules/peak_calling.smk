@@ -864,44 +864,44 @@ def call_macs2_inputs(wc):
       # This case is for doing peak calling on specific pseudo replicates (with or without control)
       samples[1] = samples[1][:-len(suffix)]
       name = sample_tab.loc[sample_tab.name == samples[0], ["condition", "tag"]]
-      inputs["trt"] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].item(), dups=dups)
+      inputs["trt"] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
       if samples[1] != 'no_control':
         name = sample_tab.loc[sample_tab.name == samples[1], ["condition", "tag", "sample_name"]]
         if len(name["tag"].unique()) == 1:
           # This case is for having only one replicate of the DNA input sample
           if name['tag'].unique() == "":
             # Here, the DNA input sample doesn't use any tag (e.g., Replicate column is empty)
-            inputs['ctl'] = expand("mapped/{cond}.{dups}.bam", cond=name['sample_name'].item(), dups=dups)
+            inputs['ctl'] = expand("mapped/{cond}.{dups}.bam", cond=name['sample_name'].unique(), dups=dups)
           else:
             # Here, the DNA input sample does use a tag (e.g., Replicate column is rep1)
-            inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].item(), dups=dups)
+            inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
         else:
-          inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].item(), dups=dups)
+          inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
     else:
       # This case is for doing peak calling on true replicates
       if len(samples) == 2:
         # This case is for using a specific replicate to call MACS (with or without control)
-        inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].item(), dups=dups)
+        inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
         if samples[1] != 'no_control':
-          inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].item(), dups=dups)
+          inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
       else:
         # This case is for using all reps of one condition to call MACS (with or without control)
-        inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].item(), dups=dups)
-        controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].item()
-        controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].item()
+        inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
+        controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
+        controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
         if any(controls):
           inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=controls, dups=dups)
       if config['spikein']:
         if len(samples) == 2:
           # This case is for using a specific replicate to call MACS (with or without control)
-          inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].item(), dups=dups)
+          inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
           if samples[1] != 'no_control':
-            inputs['ctl_spike'] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].item(), dups=dups)
+            inputs['ctl_spike'] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
         else:
           # This case is for using all reps of one condition to call MACS (with or without control)
-          inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].item(), dups=dups)
-          controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].item()
-          controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].item()
+          inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
+          controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
+          controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
           if any(controls):
             inputs['ctl_spike'] = expand("mapped/{sample}.{dups}.spike.bam", sample=controls, dups=dups)
     return inputs
@@ -974,7 +974,7 @@ rule convert_bam_to_bedgraph:
     
 
 rule prepare_pseudo_reps:
-    input:  bam = lambda wc: expand("mapped/{sample}.{{dups}}.bam", sample=sample_tab.loc[sample_tab.condition==wc.cond, 'sample_name'].item())
+    input:  bam = lambda wc: expand("mapped/{sample}.{{dups}}.bam", sample=sample_tab.loc[sample_tab.condition==wc.cond, 'sample_name'].unique())
     output: rep1 = "mapped/pseudo/{cond}_rep1.{dups}.bam",
             rep2 = "mapped/pseudo/{cond}_rep2.{dups}.bam",
             rep3 = "mapped/pseudo/{cond}_rep3.{dups}.bam",
@@ -982,8 +982,8 @@ rule prepare_pseudo_reps:
     log:    run = "logs/{cond}/prepare_pseudo_reps.{dups}.log",
     threads: 1
     resources:  mem = 25,
-    params: num_of_reps = lambda wc: sample_tab.loc[sample_tab.condition==wc.cond, 'num_of_reps'].item(),
-            tags = lambda wc: sample_tab.loc[sample_tab.condition==wc.cond, 'tag'].item(),
+    params: num_of_reps = lambda wc: sample_tab.loc[sample_tab.condition==wc.cond, 'num_of_reps'].unique()[0],
+            tags = lambda wc: sample_tab.loc[sample_tab.condition==wc.cond, 'tag'].unique(),
             merged = "mapped/pseudo/{cond}_merged.{dups}.bam",
             header = "mapped/pseudo/{cond}_merged.{dups}.header",
             prefix = "mapped/pseudo/{cond}_rep",
@@ -1004,7 +1004,7 @@ rule filter_bam:
             min_tlen = config['min_tlen'],
             max_tlen = config['max_tlen'],
             min_mapq = config['min_mapq'],
-            is_ctrl = lambda wc: sample_tab.loc[sample_tab.sample_name==wc.sample, 'is_control'].item(),
+            is_ctrl = lambda wc: sample_tab.loc[sample_tab.sample_name==wc.sample, 'is_control'].unique()[0],
             is_spike= lambda wc: "spike" in wc.extra,
             tmpd = GLOBAL_TMPD_PATH,
     conda:  "../wrappers/filter_bam/env.yaml"
