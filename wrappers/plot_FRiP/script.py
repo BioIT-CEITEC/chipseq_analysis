@@ -20,7 +20,18 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) == 0:
+if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
+    extra = ""
+    command = "$(which time) plotEnrichment -b "+" ".join(snakemake.input.bam)+\
+              " --BED "+snakemake.input.bed+" --outRawCounts "+snakemake.output.counts+\
+              " -o "+snakemake.output.plot+" --smartLabels --plotTitle 'Fraction of reads in filtered peaks' "+extra+\
+              " >> "+snakemake.log.run+" 2>&1"
+    f = open(snakemake.log.run, 'at')
+    f.write("## COMMAND: "+command+"\n")
+    f.close()
+    shell(command)
+    
+else:
     f = open(snakemake.log.run, 'at')
     f.write("## WARNING: There are no peaks in "+snakemake.input.bed+"!\n")
     f.close()
@@ -31,19 +42,8 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     f.write("## COMMAND: "+command+"\n")
     f.close()
     shell(command)
-    
-else:
-    extra = ""
-    command = "$(which time) plotEnrichment -b "+" ".join(snakemake.input.bam)+\
-              " --BED "+snakemake.input.bed+" --outRawCounts "+snakemake.output.counts+\
-              " -o "+snakemake.output.plot+" --smartLabels --plotTitle 'Fraction of reads in filtered peaks' "+extra+\
-              " >> "+snakemake.log.run+" 2>&1"
-    f = open(snakemake.log.run, 'at')
-    f.write("## COMMAND: "+command+"\n")
-    f.close()
-    shell(command)
 
-# if os.path.isfile(snakemake.input.bed_all) and os.path.getsize(snakemake.input.bed_all) == 0:
+# if os.path.isfile(snakemake.input.bed_all) and sum(1 for line in open(snakemake.input.bed_all, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
 #     f = open(snakemake.log.run, 'at')
 #     f.write("## WARNING: There are no peaks in "+snakemake.input.bed_all+"!\n")
 #     f.close()

@@ -44,12 +44,21 @@ for bed in snakemake.input.bed:
     name = os.path.split(os.path.split(bed)[0])[1]
     # Following works only in case of paths like 'something/SOURCE_peaks/something...'
     source = bed.split('/')[1][:-6]
-    if os.path.isfile(bed) and os.path.getsize(bed) > 0:
+    if os.path.isfile(bed) and sum(1 for line in open(bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
         tab = pd.read_table(bed, sep="\t")
         cols['name'].append(name)
         cols['source'].append(source)
         cols['count_all'].append(len(tab))
-        if "MACS" in bed:
+        if "SEACR" in bed:
+          cols['count_0.1'].append(len(tab))
+          cols['count_0.05'].append(len(tab))
+          cols['count_0.01'].append(len(tab))
+          cols['count_0.001'].append(len(tab))
+          cols['mean_FDR'].append(1)
+          cols['median_FDR'].append(1)
+          cols['min_FDR'].append(1)
+          cols['max_FDR'].append(1)
+        else:
           cols['count_0.1'].append(len(tab.loc[tab.qvalue > -math.log10(0.1)]))
           cols['count_0.05'].append(len(tab.loc[tab.qvalue > -math.log10(0.05)]))
           cols['count_0.01'].append(len(tab.loc[tab.qvalue > -math.log10(0.01)]))
@@ -59,15 +68,6 @@ for bed in snakemake.input.bed:
           cols['median_FDR'].append(statistics.median(fdr))
           cols['min_FDR'].append(min(fdr))
           cols['max_FDR'].append(max(fdr))
-        elif "SEACR" in bed:
-          cols['count_0.1'].append(len(tab))
-          cols['count_0.05'].append(len(tab))
-          cols['count_0.01'].append(len(tab))
-          cols['count_0.001'].append(len(tab))
-          cols['mean_FDR'].append(1)
-          cols['median_FDR'].append(1)
-          cols['min_FDR'].append(1)
-          cols['max_FDR'].append(1)
         # for ann in snakemake.params.annot.split(","):
         #     cols['count_all_annot_by_'+ann].append(len(tab.loc[(tab.qvalue > -math.log10(1)) & (tab[ann])]))
         #     cols['count_0.1_annot_by_'+ann].append(len(tab.loc[(tab.qvalue > -math.log10(0.1)) & (tab[ann])]))

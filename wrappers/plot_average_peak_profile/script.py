@@ -21,7 +21,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) == 0:
+if not os.path.isfile(snakemake.input.bed) or sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) == 0:
     f = open(snakemake.log.run, 'at')
     f.write("## WARNING: Input file "+snakemake.input.bed+" is missing or empty\n")
     f.close()
@@ -42,12 +42,18 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     shell(command)
 
 else:
-    extra = "--sortRegions keep"
+    extra = "--sortRegions keep --referencePoint center"
     if "skip_zeros" in snakemake.params and snakemake.params.skip_zeros:
         extra = extra+" --skipZeros"
     title = snakemake.params.title+" ("+snakemake.wildcards.filt+")"
 
-    command = "computeMatrix reference-point -S "+snakemake.input.bwg+" -R "+snakemake.input.bed+" -o "+snakemake.params.mtx+" "+extra+" --samplesLabel "+snakemake.params.sample_name+" -a "+str(snakemake.params.after)+" -b "+str(snakemake.params.before)+" -p "+str(snakemake.threads)+" >> "+snakemake.log.run+" 2>&1"
+    command = "grep -vP '^(#|track)' "+snakemake.input.bed+"|awk '{{$2=$2+$10;$3=$2+1;print}}' OFS='\\t' > "+snakemake.params.input_peaks+" 2>> "+snakemake.log.run
+    f = open(snakemake.log.run, 'at')
+    f.write("## COMMAND: "+command+"\n")
+    f.close()
+    shell(command)
+
+    command = "$(which time) --verbose computeMatrix reference-point -S "+snakemake.input.bwg+" -R "+snakemake.params.input_peaks+" -o "+snakemake.params.mtx+" "+extra+" --samplesLabel "+snakemake.params.sample_name+" -a "+str(snakemake.params.after)+" -b "+str(snakemake.params.before)+" -p "+str(snakemake.threads)+" >> "+snakemake.log.run+" 2>&1"
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
     f.close()

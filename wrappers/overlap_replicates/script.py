@@ -1,5 +1,5 @@
 #########################################
-# wrapper for rule: overlap_found_peaks
+# wrapper for rule: overlap_replicates
 #########################################
 import os
 import sys
@@ -11,7 +11,7 @@ from snakemake.shell import shell
 SAMTOOLS = "samtools"
 
 f = open(snakemake.log.run, 'a+')
-f.write("\n##\n## RULE: overlap_found_peaks \n##\n")
+f.write("\n##\n## RULE: overlap_replicates \n##\n")
 f.close()
 
 shell.executable("/bin/bash")
@@ -28,17 +28,14 @@ f.close()
 shell(command)
 
 command = "(time Rscript "+snakemake.params.rscript+\
-          " "+snakemake.input.c1+\
-          " "+snakemake.input.c2+\
-          " "+snakemake.output.tab+\
-          " "+snakemake.output.his+\
+          " "+snakemake.output.tall+\
+          " "+snakemake.output.tol+\
           " "+snakemake.output.s1+\
           " "+snakemake.output.s2+\
           " "+snakemake.output.smr+\
-          " "+snakemake.params.comparison+\
+          " "+snakemake.wildcards.name+\
           " "+snakemake.wildcards.tool+\
-          " "+str(snakemake.params.fdr_cutof)+\
-          " "+str(snakemake.params.l2fc_cutof)+\
+          " "+" ".join(snakemake.input.reps)+\
           ") >> "+snakemake.log.run+" 2>&1"
 f = open(snakemake.log.run, 'at')
 f.write("## COMMAND: "+command+"\n")

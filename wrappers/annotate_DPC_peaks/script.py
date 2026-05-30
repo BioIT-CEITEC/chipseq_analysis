@@ -19,7 +19,7 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+conda+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) > 0:
+if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
     command = "(time Rscript "+snakemake.params.rscript+\
               " "+snakemake.input.bed+\
               " "+snakemake.input.gtf+\

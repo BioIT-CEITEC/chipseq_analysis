@@ -29,113 +29,25 @@ from os.path import split
 #             logLR_cutoff = config.bdgdiff_logLR_cutoff.min(),
 #     conda:  "../wrappers/final_report/env.yaml"   
 #     script: "../wrappers/final_report/ChIP-seq_analysis_report_template.Rmd" 
-# 
-# def specify_inputs_for_multiqc_report(wc):
-#     inputs = [ 
-#         "bam_QC/correlation_heatmap.no_dups.pdf",
-#         expand("mapped/{full_name}.bam_cov.no_dups.bigWig", full_name=set(config["full_name"].tolist())),
-#         expand("bam_QC/{name}.{dups}.cross-correlation.pdf", name=set(config.loc[config.condition != 'control', "full_name"].tolist()), dups="no_dups"),
-#         expand("bam_QC/{name}.{dups}.cross-correlation.pdf", name=set(config.loc[config.condition != 'control', "full_name"].tolist()), dups="keep_dups"),
-#     ]
-#     # These results are meaningful for the pipeline assesment regardless of the keep_dups parameter value
-#     inputs.append("bam_QC/correlation_heatmap.keep_dups.pdf")
-#     inputs.append(expand("mapped/{full_name}.bam_cov.keep_dups.bigWig", full_name=config["full_name"].tolist()))
-#       
-#     # get FRiPs as output
-#     dups = "no_dups"
-#     if 'keep_dups' in config and config.keep_dups.tolist()[0] == "yes":
-#         dups = [dups, "keep_dups"]
-#     inputs.append(expand("peaks_QC/fraction_of_reads_in_peaks/{name}.{dups}.FRiP.pdf", name=samples_set, dups=dups))
-#     inputs.append(expand("peaks_QC/average_peak_profile/{name}.{dups}.average_peak_profile.pdf", name=samples_set, dups=dups))
-#     inputs.append(expand("peaks_QC/top_{top}_peak_profiles_by_score/{name}.{dups}.top_peak_profiles.pdf", top=config.top_peaks.min(), name=samples_set, dups=dups))
-#     inputs.append(expand("results/MACS_peaks/{name}/score_tracks/{name}.{dups}.p-value_score.bdg", name=samples_set, dups=dups))
-#     inputs.append(expand("results/MACS_peaks/{name}/{name}.{dups}.peaks.annotated.tsv", name=samples_set, dups=dups))
-#     inputs.append(expand("results/MACS_peaks/enriched_peaks_summary.{dups}.tsv", dups=dups))
-#     
-#     sset = []
-#     for sample in set(config.loc[config.condition != "control", "condition"].tolist()):
-#         tags = config.loc[config.condition == sample, "tag"].tolist()
-#         if len(set(tags)) > 1:
-#             tags = set(tags+["pooled", "all"])
-#         for tag in tags:
-#             tag = tag if tag != "" else "norep"
-#             sset.append([sample,tag])
-#     tags = config.loc[config.condition != "control", "tag"].tolist()
-#     if len(set(tags)) > 1:
-#         tags = set(tags+["pooled"])
-#     for tag in tags:
-#         tag = tag if tag != "" else "norep"
-#         sset.append(["all_samples",tag])
-#     # print(sset)
-#     for pa in config.profile_avrg.min().split(";"):
-#         for pt in config.profile_type.min().split(";"):
-#             for gs in gene_sets:
-#                 if 'rel_profile' in config and config['rel_profile'].tolist()[0] != "only":
-#                     inputs.append(["peaks_profile/over_"+gs+"/"+x[0]+"/"+x[1]+"/profile_average_"+pa+".profile_type_"+pt+"/"+x[0]+"."+x[1]+".no_dups.heatmap.pdf" for x in sset])
-#                 if 'rel_profile' in config and config['rel_profile'].tolist()[0] in ["yes", "only"]:
-#                     inputs.append(["peaks_profile/over_"+gs+"/"+x[0]+"/"+x[1]+"/profile_average_"+pa+".profile_type_"+pt+"/"+x[0]+"."+x[1]+".no_dups.rel_counts.heatmap.pdf" for x in sset])
-#                 if 'keep_dups' in config and config.keep_dups.tolist()[0] == "yes":
-#                     if 'rel_profile' in config and config['rel_profile'].tolist()[0] != "only":
-#                         inputs.append(["peaks_profile/over_"+gs+"/"+x[0]+"/"+x[1]+"/profile_average_"+pa+".profile_type_"+pt+"/"+x[0]+"."+x[1]+".keep_dups.heatmap.pdf" for x in sset])
-#                     if 'rel_profile' in config and config['rel_profile'].tolist()[0] in ["yes", "only"]:
-#                         inputs.append(["peaks_profile/over_"+gs+"/"+x[0]+"/"+x[1]+"/profile_average_"+pa+".profile_type_"+pt+"/"+x[0]+"."+x[1]+".keep_dups.rel_counts.heatmap.pdf" for x in sset])
-#       
-#     if 'conds_to_compare' in config and config['conds_to_compare'] != "":
-#         if config['conds_to_compare'] == "all":
-#             # create all pairs of conditions
-#             conditions = itertools.combinations(set(config.condition.tolist()),2)
-#         else:
-#             # use only specified conditions
-#             conditions = [x.split(":") for x in config['conds_to_compare'].split(",")]
-#             
-#         for cond in conditions:
-#             if len(cond) > 2:
-#                 raise NotImplementedError("Only comparison of two conditions is supported!")
-#             elif len(cond) < 2:
-#                 raise ValueError("Not enough conditions to compare, exactly 2 conditions needed!")
-#             else:
-#                 c0_tags = config.loc[config.condition == cond[0], "tag"].tolist()
-#                 if len(c0_tags)>1:
-#                     c0_tags.append("pooled")
-#                 c1_tags = config.loc[config.condition == cond[1], "tag"].tolist()
-#                 if len(c1_tags)>1:
-#                     c1_tags.append("pooled")
-#                 for t0 in c0_tags:
-#                     for t1 in c1_tags:
-#                         if t0 == '' or t1 == '' or t0 == t1:
-#                             t0 = t0 if t0 != '' else 'norep'
-#                             t1 = t1 if t1 != '' else 'norep'
-#                             
-#                             # # NOTE: DPC_tables are commented out intentionally, because they are computed out of raw reads coverage from BAMs without extension to fragment length
-#                             # #       so these results don't correspond to reality as good as data from results/peaks_by_macs2
-#                             # for metric in config['dpc_metric'].min().split(","):
-#                             #     inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".no_dups/DPC_table."+metric+"_based.annotated.tsv")
-#                             #     if 'keep_dups' in config and config.keep_dups.tolist()[0] == "yes":
-#                             #         inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".keep_dups/DPC_table."+metric+"_based.annotated.tsv")
-#                                     
-#                             inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".no_dups/bdgdiff/enriched_peaks_venn.pdf")
-#                             inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".no_dups/overlap/overlapped_peaks.tsv")
-#                             if 'keep_dups' in config and config.keep_dups.tolist()[0] == "yes":
-#                                 inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".keep_dups/bdgdiff/enriched_peaks_venn.pdf")
-#                                 inputs.append("diff_peak_calling/"+cond[0]+"_vs_"+cond[1]+"/"+t0+"_vs_"+t1+".keep_dups/overlap/overlapped_peaks.tsv")
-#     return inputs
 
 
 def multiqc_report_inputs(wc):
     inputs = list()
     inputs+= expand("results/enriched_peaks_summary.{dups}.tsv", dups=config["dups"])
+    samples = sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique()
     if any(i > 1 for i in sample_tab['num_of_reps']):
         inputs+= expand("results/reproducible_peaks_summary.{dups}.tsv", dups=config["dups"])
-        samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), 
-                      *sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "condition"].unique()]
+        inputs+= expand("results/overlapped_replicates_summary.{dups}.tsv", dups=config["dups"])
+        samples = [*samples,
+                   *sample_tab.loc[(sample_tab.is_control==False)&(sample_tab.num_of_reps>1), "condition"].unique()]
     else:
         print("No replicates!")
-        samples = [*sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique()]
     if 'conds_to_compare' in config and config['conds_to_compare'] != "" and sample_tab.shape[0] > 1:
-        inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config['dups'])
-    inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
-                sample=sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), #+sample_tab.loc[sample_tab.is_control==False, "condition"].unique(),
-                dups=config["dups"])
+        inputs+= expand("results/differential_peaks_summary.{dups}.tsv", dups=config["dups"])
+## DEMON: ChIPQC started to be difficult to maintain, feel free to repair its wrapper
+#    inputs+= expand("results/ChIPQC/{sample}/{sample}.{dups}.report.html",
+#                sample=sample_tab.loc[sample_tab.is_control==False, "peaks_name"].unique(), #+sample_tab.loc[sample_tab.is_control==False, "condition"].unique(),
+#                dups=config["dups"])
     inputs+= expand("results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.pdf",
                 name=samples,
                 dups=config["dups"],
@@ -156,13 +68,13 @@ def multiqc_report_inputs(wc):
 rule multiqc_report:
     input:  multiqc_report_inputs,
     output: report = "final_report.html",
-            zip = "final_report_data.zip",
+            zip    = "final_report_data.zip",
     params: repdir = "final_report_data",
     resources: tmpdir=GLOBAL_TMPD_PATH,
     log:    run = "logs/multiqc_report.log",
     conda:  "../wrappers/multiqc_report/env.yaml"
     script: "../wrappers/multiqc_report/script.py"
-    
+
 #########################################
 # Diff peak calling
 #
@@ -175,7 +87,7 @@ def diff_summary_inputs(wc):
             conditions = list(itertools.combinations(sample_tab.loc[sample_tab.is_control==False,'condition'].unique(),2))
         else:
             # use only specified conditions
-            conditions = [x.split(":") for x in config['conds_to_compare'].split(",")]
+            conditions = [x.split(":") for x in config['conds_to_compare'].split(";")]
         
         # print([i for i in conditions])
         for cond in conditions:
@@ -190,9 +102,12 @@ def diff_summary_inputs(wc):
             else:
                 inputs.append(f"results/MACS_bdgdiff/{cond[0]}_vs_{cond[1]}/enriched_peaks_venn.{wc.dups}.tsv")
                 inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MACS.tsv")
-                if all(i > 1 for i in sample_tab.loc[(sample_tab.condition==cond[0])|(sample_tab.condition==cond[1]), 'num_of_reps'].unique()):
-                    inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MSPC.tsv")
-                    inputs.append(f"results/DiffBind/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.tsv")
+#                inputs.append(f"results/merged_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MACS.tsv")
+                inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_SEACR.tsv")
+#                inputs.append(f"results/merged_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_SEACR.tsv")
+                # if all(i > 1 for i in sample_tab.loc[(sample_tab.condition==cond[0])|(sample_tab.condition==cond[1]), 'num_of_reps'].unique()):
+                #     inputs.append(f"results/overlapped_peaks/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.by_MSPC.tsv")
+                #     inputs.append(f"results/DiffBind/{cond[0]}_vs_{cond[1]}/summary_table.{wc.dups}.tsv")
     return inputs
 
 rule diff_summary:
@@ -209,29 +124,32 @@ def call_diffbind_inputs(wc):
   os.makedirs(os.path.dirname(design), exist_ok=True)
   design_tab = sample_tab.loc[sample_tab['condition'].isin([wc.c1, wc.c2]), ("name","condition","tag","control")].set_axis(['SampleID', 'Condition', 'Replicate', 'ControlID'], axis='columns').drop_duplicates()
   design_tab['bamReads'] = design_tab.apply(lambda row: "mapped/{sample}.{dups}.bam".format(
-      sample = sample_tab.loc[sample_tab['name'] == row.SampleID, 'sample_name'].min(), 
+      sample = sample_tab.loc[sample_tab['name'] == row.SampleID, 'sample_name'].min(),
       dups = wc.dups
   ), axis=1)
-  design_tab['bamControl'] = design_tab.apply(lambda row: "mapped/{sample}.{dups}.bam".format(
-      sample = sample_tab.loc[sample_tab['name'] == row.ControlID, 'sample_name'].min(), 
-      dups = wc.dups
-  ), axis=1)
+  if not design_tab['ControlID'].isin(["no_control"]).any():
+    design_tab['bamControl'] = design_tab.apply(lambda row: "mapped/{sample}.{dups}.bam".format(
+        sample = sample_tab.loc[sample_tab['name'] == row.ControlID, 'sample_name'].min(),
+        dups = wc.dups
+    ), axis=1)
   design_tab['Peaks'] = design_tab.apply(lambda row: "results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.narrowPeak".format(
       tool = "MACS",
       name = row.SampleID+"_VS_"+row.ControlID,
       dups = wc.dups
   ), axis=1)
   design_tab['PeakCaller'] = "narrow"
-  # catgorical order of conditions must be the opposite of normal meaning as DiffBind assumes the first one to be a control condition
+  # categorical order of conditions must be the opposite of normal meaning as DiffBind assumes the first one to be a control condition
   condition_order = CategoricalDtype([wc.c2, wc.c1], ordered=True)
   design_tab['Condition'] = design_tab['Condition'].astype(condition_order)
   design_tab = design_tab.sort_values(['Condition', 'Replicate'])
   design_tab.to_csv(design, sep="\t", index=False)
   
   inputs['bed'] = expand("{peaks}", peaks=design_tab['Peaks'].unique())
-  inputs['bam'] = expand("{reads}", reads=[*design_tab['bamReads'].unique(),*design_tab['bamControl'].unique()])
+  if not design_tab['ControlID'].isin(["no_control"]).any():
+    inputs['bam'] = expand("{reads}", reads=[*design_tab['bamReads'].unique(),*design_tab['bamControl'].unique()])
+  else:
+    inputs['bam'] = expand("{reads}", reads=[*design_tab['bamReads'].unique()])
   inputs['tab'] = ancient(design)
-  # print(inputs)
   return inputs
 
 rule call_diffbind:
@@ -264,7 +182,7 @@ rule call_diffbind:
     conda:  "../wrappers/call_DiffBind/env.yaml"
     script: "../wrappers/call_DiffBind/script.R"
 
-    
+
 # rule annotate_DPC_peaks:
 #     input:  bed = ADIR+"/diff_peak_calling/{comparison}/{subset}.{dups}/DPC_table.{metric}_based.tsv",
 #             gtf = expand(REF_DIR+"/{organism}/{ref}/annot/{ref}.gtf", organism=config['organism'].tolist()[0], ref=config['reference'].tolist()[0])[0]
@@ -361,35 +279,49 @@ rule call_diffbind:
 #     script: "../wrappers/merge_narrowPeaks/script.py"
 
 
-def overlap_found_peaks_input(wc):
+def overlap_conditions_input(wc):
     inputs = dict()
     c1 = wc.c1
     c2 = wc.c2
+    consensus_type = wc.consensus_type
+    if wc.tool == "MSPC":      
+      inputs['c1'] = f"results/{wc.tool}_peaks/{wc.c1}/{wc.c1}.{wc.dups}.peaks.all.narrowPeak"
+      inputs['c2'] = f"results/{wc.tool}_peaks/{wc.c2}/{wc.c2}.{wc.dups}.peaks.all.narrowPeak"
+      return inputs
+
     if sample_tab.loc[sample_tab.condition==wc.c1, 'num_of_reps'].unique() == 1:
-        c1 = sample_tab.loc[sample_tab.condition==wc.c1, 'peaks_name'].unique()[0]
+      c1 = sample_tab.loc[sample_tab.condition==wc.c1, 'peaks_name'].unique()[0]
+      inputs['c1'] = f"results/{wc.tool}_peaks/{c1}/{c1}.{wc.dups}.peaks.all.narrowPeak"
+    else:
+      c1 = sample_tab.loc[sample_tab.condition==wc.c1, 'condition'].unique()[0]
+      inputs['c1'] = f"results/overlapped_replicates/{c1}/{c1}.{consensus_type}.{wc.dups}.by_{wc.tool}.bed"
+      
     if sample_tab.loc[sample_tab.condition==wc.c2, 'num_of_reps'].unique() == 1:
-        c2 = sample_tab.loc[sample_tab.condition==wc.c2, 'peaks_name'].unique()[0]
-    inputs['c1'] = f"results/{wc.tool}_peaks/{c1}/{c1}.{wc.dups}.peaks.all.narrowPeak"
-    inputs['c2'] = f"results/{wc.tool}_peaks/{c2}/{c2}.{wc.dups}.peaks.all.narrowPeak"
+      c2 = sample_tab.loc[sample_tab.condition==wc.c2, 'peaks_name'].unique()[0]
+      inputs['c2'] = f"results/{wc.tool}_peaks/{c2}/{c2}.{wc.dups}.peaks.all.narrowPeak"
+    else:
+      c2 = sample_tab.loc[sample_tab.condition==wc.c2, 'condition'].unique()[0]
+      inputs['c2'] = f"results/overlapped_replicates/{c2}/{c2}.{consensus_type}.{wc.dups}.by_{wc.tool}.bed"
     return inputs
 
-rule overlap_found_peaks:
-    input:  unpack(overlap_found_peaks_input),
-    output: tab= "results/overlapped_peaks/{c1}_vs_{c2}/overlapped_peaks.{dups}.by_{tool}.tsv",
-            his= "results/overlapped_peaks/{c1}_vs_{c2}/overlapped_peaks.{dups}.by_{tool}.hist.tsv",
-            s1 = "results/overlapped_peaks/{c1}_vs_{c2}/singletons_in_{c1}.{dups}.by_{tool}.tsv",
-            s2 = "results/overlapped_peaks/{c1}_vs_{c2}/singletons_in_{c2}.{dups}.by_{tool}.tsv",
-            smr= "results/overlapped_peaks/{c1}_vs_{c2}/summary_table.{dups}.by_{tool}.tsv",
-    log:    run= "logs/{c1}_vs_{c2}/overlap_found_peaks_by_{tool}.{dups}.log",
-    params: rscript = workflow.basedir+"/wrappers/overlap_found_peaks/overlap_peaks.R",
-            odir = "results/overlapped_peaks/{c1}_vs_{c2}",
+rule overlap_conditions:
+    input:  unpack(overlap_conditions_input),
+    output: tab= "results/{consensus_type}/{c1}_vs_{c2}/overlapped_peaks.{dups}.by_{tool}.bed",
+            his= "results/{consensus_type}/{c1}_vs_{c2}/overlapped_peaks.{dups}.by_{tool}.hist.tsv",
+            s1 = "results/{consensus_type}/{c1}_vs_{c2}/singletons_in_{c1}.{dups}.by_{tool}.bed",
+            s2 = "results/{consensus_type}/{c1}_vs_{c2}/singletons_in_{c2}.{dups}.by_{tool}.bed",
+            smr= "results/{consensus_type}/{c1}_vs_{c2}/summary_table.{dups}.by_{tool}.tsv",
+    log:    run= "logs/{c1}_vs_{c2}/{consensus_type}_found_by_{tool}.{dups}.log",
+    params: rscript = workflow.basedir+"/wrappers/overlap_conditions/overlap_peaks.R",
+            odir = "results/{consensus_type}/{c1}_vs_{c2}",
             comparison = "{c1}_vs_{c2}",
+            broad_peaks = config["macs_broad_peaks"],
             fdr_cutof = config['diff_fdr_cutof'],
             l2fc_cutof= config['diff_l2fc_cutof'],
-    conda:  "../wrappers/overlap_found_peaks/env.yaml"
-    script: "../wrappers/overlap_found_peaks/script.py"
-    
-    
+    conda:  "../wrappers/overlap_conditions/env.yaml"
+    script: "../wrappers/overlap_conditions/script.py"
+
+
 rule plot_bdgdiff_venn:
     input:  c1 = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_{c1}.{dups}.annotated.bed",
             c2 = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_{c2}.{dups}.annotated.bed",
@@ -403,7 +335,7 @@ rule plot_bdgdiff_venn:
 
 rule annotate_bdgdiff_peaks:
     input:  bed = "results/MACS_bdgdiff/{comparison}/{filename}.{dups}.bed",
-            gtf = expand(reference_directory+"/annot/{ref}.gtf", ref=config['reference'])[0],
+            gtf = config["organism_gtf"],
     output: bed = "results/MACS_bdgdiff/{comparison}/{filename}.{dups}.annotated.bed",
     log:    run = "logs/{comparison}/annotate_bdgdiff_peaks_in_{filename}.{dups}.log",
     resources: mem=5
@@ -412,8 +344,8 @@ rule annotate_bdgdiff_peaks:
             annotate_by = config['peak_annot_by'],
     conda:  "../wrappers/annotate_DPC_peaks/env.yaml"
     script: "../wrappers/annotate_DPC_peaks/script.py"
-    
-    
+
+
 def call_bdgdiff_input(wc):
     inputs = dict()
     c1 = wc.c1
@@ -429,23 +361,23 @@ def call_bdgdiff_input(wc):
     inputs['ctl2'] = f"results/MACS_peaks/{c2}/{c2}.{wc.dups}.control.bdg"
     inputs['xls2'] = f"results/MACS_peaks/{c2}/{c2}.{wc.dups}.peaks.all.xls"
     return inputs
-    
+
 rule call_bdgdiff:
     input:  unpack(call_bdgdiff_input),
     output: cnd1 = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_{c1}.{dups}.bed",
             cnd2 = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_{c2}.{dups}.bed",
             comn = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_both.{dups}.bed",
     log:    run  = "logs/{c1}_vs_{c2}/call_bdgdiff.{dups}.log",
-    params: logLR_cutoff = config['bdgdiff_logLR_cutoff'], # DONE: should be pipeline parameter >= 0
-            min_len = config['bdgdiff_min_len'], # DONE: should be pipeline parameter(Integer)
-            max_gap = config['bdgdiff_max_gap'], # DONE: should be pipeline parameter (Integer)
+    params: logLR_cutoff = config['bdgdiff_logLR_cutoff'],
+            min_len = config['bdgdiff_min_len'],
+            max_gap = config['bdgdiff_max_gap'],
             cnd1 = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_{c1}.{dups}.bed.tmp",
             cnd2 = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_{c2}.{dups}.bed.tmp",
             comn = "results/MACS_bdgdiff/{c1}_vs_{c2}/enriched_peaks_in_both.{dups}.bed.tmp",
     conda:  "../wrappers/call_bdgdiff/env.yaml"
     script: "../wrappers/call_bdgdiff/script.py"
 
-   
+
 #########################################
 # Peaks assessment
 #
@@ -459,7 +391,6 @@ def peaks_summary_inputs(wcs):
         inputs['bed'] = expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=singlerep, dups=wcs.dups, tool=['MACS','SEACR']) +\
              expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=pseudorep, dups=wcs.dups, tool=['MACS']) +\
              expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=multirep, dups=wcs.dups, tool=['MACS','MSPC'])
-             # expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=multirep, dups=wcs.dups, tool=['MACS','MSPC','Fisher'])
     else:
         inputs['bed'] = expand("results/{tool}_peaks/{name}/{name}.{dups}.peaks.all.annotated.tsv", name=singlerep, dups=wcs.dups, tool=['MACS','SEACR'])
 
@@ -494,38 +425,9 @@ rule peaks_summary:
     params: annot = config["peak_annot_by"],
     conda:  "../wrappers/peaks_summary/env.yaml"
     script: "../wrappers/peaks_summary/script.py"
-    
 
-# def plot_profile_and_heatmap_input(wc):
-#     inputs = dict()
-#     if wc.name == "all_samples":
-#         if wc.reps == "norep":
-#             # we want results for each sample without replicates (i.e., with only one replicate)
-#             samples = [x for x in set(cfg.loc[(cfg.tag == "") & (cfg.condition != "control"), "condition"].tolist())]
-#         elif wc.reps == "pooled":
-#             # we want pooled results per each sample with more replicates
-#             samples = [x for x in set(cfg.loc[(cfg.tag != "") & (cfg.condition != "control"), "condition"].tolist())]
-#         else:
-#             # we want particular results of particular replicate of samples
-#             samples = cfg.loc[(cfg.tag == wc.reps) & (cfg.condition != "control"), "condition"].tolist()
-#         inputs['mtx'] = [ADIR+"/peaks_profile/over_"+wc.gene_set+"/"+i+"/"+wc.reps+"/coverage_matrix."+wc.dups+".mtx.gz" for i in set(samples)]
-#     else: 
-#         # wc.name contains condition
-#         if wc.reps == "all":
-#             tags = cfg.loc[cfg.condition == wc.name, "tag"].tolist()
-#             if len(set(tags)) > 1:
-#                 tags = tags+["pooled"]
-#             files = []
-#             for tag in set(tags):
-#                 files.append(ADIR+"/peaks_profile/over_"+wc.gene_set+"/"+wc.name+"/"+tag+"/coverage_matrix."+wc.dups+".mtx.gz")
-#             inputs['mtx'] = files
-#         else:
-#             # wc.reps is one of: pooled, norep, repX
-#             inputs['mtx'] = [ADIR+"/peaks_profile/over_"+wc.gene_set+"/"+wc.name+"/"+wc.reps+"/coverage_matrix."+wc.dups+".mtx.gz"]
-#     return inputs
 
 rule plot_profile_and_heatmap:
-    # input:  unpack(plot_profile_and_heatmap_input),
     input:  mtx = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.mtx.gz",
     output: heatmap = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.heatmap.pdf",
             profile = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.profile.pdf",
@@ -534,8 +436,8 @@ rule plot_profile_and_heatmap:
     threads: 1
     params: dpi = 300,
             title = "{name}.{dups}.{filt}",
-            profile_type = config["profile_type"],
-            profile_avrg = config["profile_avrg"],
+            profile_type = "lines",
+            profile_avrg = "median",
             mtx     = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.mtx.tmp.gz",
             data    = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.profile.data",
             heatmtx = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.heatmap_mtx.gz",
@@ -543,36 +445,14 @@ rule plot_profile_and_heatmap:
     script: "../wrappers/plot_profile_and_heatmap/script.py"
 
 
-# rule compute_matrix_relative:
-#     input:  mtx = ADIR+"/peaks_profile/over_{gene_set}/{name}/{reps}/coverage_matrix.{dups}.mtx.gz",
-#     output: mtx = ADIR+"/peaks_profile/over_{gene_set}/{name}/{reps}/coverage_matrix.{dups}.rel_counts.mtx.gz",
-#     log:    run = ADIR+"/logs/over_{gene_set}/compute_matrix_relative.{name}.{reps}.{dups}.log",
-#     threads: 1
-#     params: smooth = cfg.rel_smooth.min(),
-#             rscript= workflow.basedir+"/../wrappers/compute_matrix_relative/computeMatrix_relative_output.R",
-#             mtx = ADIR+"/peaks_profile/over_{gene_set}/{name}/{reps}/coverage_matrix.{dups}.rel_counts.mtx",
-#     conda:  "../wrappers/compute_matrix_relative/env.yaml"
-#     script: "../wrappers/compute_matrix_relative/script.py"
-# 
-# 
-# def compute_matrix_input(wc):
-#     if wc.reps == "norep":
-#         name = wc.name
-#         return "results/MACS_peaks/"+name+"/"+name+"."+wc.dups+".bigWig"
-#     else:
-#         name = wc.name+"_"+wc.reps
-#         return "results/MACS_peaks/"+name+"/"+name+"."+wc.dups+".bigWig"
-# 
 rule compute_matrix:
-    # input:  bwg = compute_matrix_input,
     input:  bwg = "results/{tool}_peaks/{name}/{name}.{dups}.bigWig",
             ref = "gene_sets/{gs}.gene_set.bed",
     output: mtx = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.mtx.gz",
     log:    run = "logs/{name}/compute_matrix.from_{tool}.{dups}.{filt}.over_{gs}.log",
     threads: 2,
-    # wildcard_constraints: dups="[^\.]+",
-    params: before = config['before_genes'],
-            after = config['after_genes'],
+    params: before = config['top_peaks_neighborhood'],
+            after = config['top_peaks_neighborhood'],
             sample_name = "{name}.{dups}.{filt}",
             mtx = "results/peaks_QC/peak_profiles/over_{gs}/{name}.{dups}.from_{tool}.{filt}.over_{gs}.mtx.tmp.gz",
             rscript = workflow.basedir+"/wrappers/compute_matrix/complete_regions_set.R",
@@ -593,7 +473,6 @@ def create_gene_set_inputs(wc):
   
 # This rule converts GTF file into bed12 gene_set if needed or just copy bed file into project
 rule create_gene_set:
-    # input:  ref = default_reference
     input:  unpack(create_gene_set_inputs)
     output: ref = "gene_sets/{gene_set}.gene_set.bed"
     log:    run = "logs/create_gene_set.{gene_set}.log",
@@ -627,9 +506,9 @@ def plot_average_peak_profile_inputs(wc):
     inputs= dict()
     inputs['bwg'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.bigWig"
     if wc.filt == "all":
-      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.summits.all.bed"
+      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.all.narrowPeak"
     else:
-      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.summits.bed"
+      inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.narrowPeak"
     return inputs
 
 rule plot_average_peak_profile:
@@ -646,12 +525,13 @@ rule plot_average_peak_profile:
             profile_type = "std",
             profile_avrg = "median",
             sample_name = "{name}.{dups}.{filt}",
+            input_peaks = GLOBAL_TMPD_PATH+"/{tool}_peaks.{name}.{dups}.{filt}.tmp.narrowPeak",
             mtx = "results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.mtx.tmp.gz",
             data = "results/peaks_QC/peak_profiles/over_peaks/{name}.{dups}.from_{tool}.{filt}.average_peak_profile.heatmap_matrix.gz",
     conda:  "../wrappers/plot_average_peak_profile/env.yaml"
     script: "../wrappers/plot_average_peak_profile/script.py"
-  
-  
+
+
 def plot_FRiP_inputs(wc):
   inputs = dict()
   suffix = ".pseudo_reps"
@@ -662,12 +542,13 @@ def plot_FRiP_inputs(wc):
     if not '_VS_' in wc.name:
       samples = sample_tab.loc[sample_tab['condition'] == wc.name, "sample_name"].unique()
   inputs['bam'] = expand("mapped/{sample}.{dups}.bam", sample=samples, dups=wc.dups)
+  inputs['bai'] = expand("mapped/{sample}.{dups}.bam.bai", sample=samples, dups=wc.dups)
   if wc.filt == "all":
     inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.all.narrowPeak"
   else:
     inputs['bed'] = f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.narrowPeak"
   return inputs
-    
+
 rule plot_FRiP:
     input:  unpack(plot_FRiP_inputs)
     output: plot = "results/peaks_QC/FRiP/{name}.{dups}.from_{tool}.{filt}.FRiP.pdf",
@@ -677,39 +558,77 @@ rule plot_FRiP:
     script: "../wrappers/plot_FRiP/script.py"
 
 
-def call_chipqc_inputs(wc):
-    inputs = dict()
-    inputs["peaks"] = f"results/MACS_peaks/{wc.sample}/{wc.sample}.{wc.dups}.peaks.all.narrowPeak"
-    inputs["reads"] = f"mapped/{sample_tab.loc[sample_tab.peaks_name == wc.sample, 'sample_name'].unique()[0]}.{wc.dups}.bam"
-    return inputs
+## DEMON: ChIPQC started to be difficult to maintain, feel free to repair its wrapper
+#def call_chipqc_inputs(wc):
+#    inputs = dict()
+#    inputs["peaks"] = f"results/MACS_peaks/{wc.sample}/{wc.sample}.{wc.dups}.peaks.all.narrowPeak"
+#    inputs["reads"] = f"mapped/{sample_tab.loc[sample_tab.peaks_name == wc.sample, 'sample_name'].unique()[0]}.{wc.dups}.bam"
+#    return inputs
+#
+#rule call_chipqc:
+#    input:  unpack(call_chipqc_inputs),
+#    output: html = "results/ChIPQC/{sample}/{sample}.{dups}.report.html",
+#            Robj = "results/ChIPQC/{sample}/{sample}.{dups}.report.RData",
+#            Rsam = "results/ChIPQC/{sample}/{sample}.{dups}.sample.RData",
+#    log:    run = "logs/{sample}/call_chipqc.{dups}.log"
+#    params: rscript = workflow.basedir+"/wrappers/call_chipqc/chipqc_sample.R",
+#            input_peaks = GLOBAL_TMPD_PATH+"/MACS_peaks.{sample}.{dups}.narrowPeak",
+#            odir = "results/ChIPQC/{sample}",
+#            prefix="{sample}.{dups}.report"
+#    conda:  "../wrappers/call_chipqc/env.yaml"
+#    script: "../wrappers/call_chipqc/script.py"
 
-rule call_chipqc:
-    input:  unpack(call_chipqc_inputs),
-    output: html = "results/ChIPQC/{sample}/{sample}.{dups}.report.html",
-            Robj = "results/ChIPQC/{sample}/{sample}.{dups}.report.RData",
-            Rsam = "results/ChIPQC/{sample}/{sample}.{dups}.sample.RData",
-    log:    run = "logs/{sample}/call_chipqc.{dups}.log"
-    params: rscript = workflow.basedir+"/wrappers/call_chipqc/chipqc_sample.R",
-            odir = "results/ChIPQC/{sample}",
-            prefix="{sample}.{dups}.report"
-    conda:  "../wrappers/call_chipqc/env.yaml"
-    script: "../wrappers/call_chipqc/script.py"
-    
 #########################################
 # Examine Peaks reproducibility
 #
 
+rule overlap_replicates_summary:
+    input:  bed = expand("results/overlapped_replicates/{sample}/{sample}.summary_table.{{dups}}.by_{tool}.tsv", sample=sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==2), "condition"].unique(), tool=['SEACR','MACS'])
+    output: tab = "results/overlapped_replicates_summary.{dups}.tsv"
+    log:    run = "logs/overlap_replicates_summary.{dups}.log",
+    conda:  "../wrappers/overlap_replicates_summary/env.yaml"
+    script: "../wrappers/overlap_replicates_summary/script.R"
+
+
+def overlap_replicates_input(wc):
+    inputs = dict()
+    reps = sample_tab.loc[(sample_tab.condition==wc.name) & (sample_tab.is_control==False), 'peaks_name'].unique()
+    inputs['reps'] = expand("results/{tool}_peaks/{rep}/{rep}.{dups}.peaks.all.narrowPeak", rep=reps, tool=wc.tool, dups=wc.dups)
+    return inputs
+
+rule overlap_replicates:
+    input:  unpack(overlap_replicates_input),
+    output: tall= "results/overlapped_replicates/{name}/{name}.merged_peaks.{dups}.by_{tool}.bed",
+            tol= "results/overlapped_replicates/{name}/{name}.overlapped_peaks.{dups}.by_{tool}.bed",
+            s1 = "results/overlapped_replicates/{name}/{name}.singletons_in_rep1.{dups}.by_{tool}.bed",
+            s2 = "results/overlapped_replicates/{name}/{name}.singletons_in_rep2.{dups}.by_{tool}.bed",
+            smr= "results/overlapped_replicates/{name}/{name}.summary_table.{dups}.by_{tool}.tsv",
+    log:    run= "logs/{name}/overlap_replicates.{dups}.by_{tool}.log",
+    params: odir = "results/overlapped_replicates/{name}",
+            rscript = workflow.basedir+"/wrappers/overlap_replicates/overlap_peaks.R",
+    conda:  "../wrappers/overlap_replicates/env.yaml"
+    script: "../wrappers/overlap_replicates/script.py"
+
+
 def reproducible_peaks_summary_inputs(wc):
     inputs = list()
     doublerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==2), "condition"].unique()
-    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.peaks.all.bed", 
+## DEMON: in order to use SEACR as a test for reproducibility, it must include runs on pseudo replicates (for IDR)
+    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=doublerep, 
                 dups=wc.dups, 
+                tool=['MACS'],
                 reps=['true_reps','pseudo_reps'])
+## DEMON: in order to use overlapped replicates as a test for reproducibility, it must include runs on pseudo replicates
+#    inputs+= expand("results/overlapped_replicates/{sample}/{sample}.merged_peaks.{dups}.by_{tool}.bed",
+#                sample=doublerep,
+#                dups=wc.dups,
+#                tool=['SEACR','MACS'])
     triplerep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps==3), "condition"].unique()
-    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{comp}.{dups}.peaks.all.bed", 
+    inputs+= expand("results/IDR_peaks/{sample}/{sample}.{reps}.{comp}.{dups}.from_{tool}.peaks.all.bed", 
                 sample=triplerep, 
                 dups=wc.dups, 
+                tool=['MACS'],
                 comp=["rep1_VS_rep2","rep2_VS_rep3","rep1_VS_rep3"],
                 reps=['true_reps','pseudo_reps'])
     multirep = sample_tab.loc[(sample_tab.is_control==False) & (sample_tab.num_of_reps>=2), "condition"].unique()
@@ -727,7 +646,7 @@ rule reproducible_peaks_summary:
     conda:  "../wrappers/reproducible_peaks_summary/env.yaml"
     script: "../wrappers/reproducible_peaks_summary/script.R"
 
-    
+
 def call_IDR_inputs(wc):
     inputs = dict()
     # This branching decides if condition has only two replicates or three (no other options are allowed)
@@ -744,24 +663,24 @@ def call_IDR_inputs(wc):
       samples = sample_tab.loc[sample_tab.condition==wc.sample,'peaks_name'].unique()
     # This branching decides about types of replicates to be compared (so far only true or pseudo are allowed)
     if wc.reps.startswith("true_reps"):
-      inputs['peaks'] = expand("results/MACS_peaks/{cond}/{cond}.{dups}.peaks.all.narrowPeak", dups=wc.dups, cond=samples)
+      inputs['peaks'] = expand("results/{tool}_peaks/{cond}/{cond}.{dups}.peaks.all.narrowPeak", dups=wc.dups, cond=samples, tool=wc.tool)
     elif wc.reps.startswith("pseudo_reps"):
-      inputs['peaks'] = expand("results/MACS_peaks/{cond}.{reps}/{cond}.{reps}.{dups}.peaks.all.narrowPeak", dups=wc.dups, reps=reps, cond=samples)
+      inputs['peaks'] = expand("results/{tool}_peaks/{cond}.{reps}/{cond}.{reps}.{dups}.peaks.all.narrowPeak", dups=wc.dups, reps=reps, cond=samples, tool=wc.tool)
     else:
       print(f"ERROR: disallowed value for wildcard reps: {wc.reps}")
     return inputs
 
 rule call_IDR:
     input:  unpack(call_IDR_inputs)
-    output: bed = "results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.peaks.bed",
-            all_bed = "results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.peaks.all.bed",
-    log:    run = "logs/{sample}/call_IDR_for_{reps}.{dups}.log",
+    output: bed = "results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.from_{tool}.peaks.bed",
+            all_bed = "results/IDR_peaks/{sample}/{sample}.{reps}.{dups}.from_{tool}.peaks.all.bed",
+    log:    run = "logs/{sample}/call_IDR_for_{reps}.{dups}.from_{tool}.log",
     threads:  1
     params: tmpd = GLOBAL_TMPD_PATH,
             cutof = config['idr_cutof'],
     conda:  "../wrappers/call_IDR/env.yaml"
     script: "../wrappers/call_IDR/script.py"
-    
+
 
 def call_chipr_inputs(wc):
     inputs = dict()
@@ -785,7 +704,7 @@ rule call_chipr:
             prefix = "results/ChIP-R_peaks/{cond}/{cond}.{reps}.{dups}.peaks",
     conda:  "../wrappers/call_chipr/env.yaml"
     script: "../wrappers/call_chipr/script.py"
-    
+
 #########################################
 # Peak calling
 #
@@ -807,21 +726,27 @@ rule call_chipr:
 #             stats = "ppois qpois max subtract FE logFE logLR"
 #     conda:  "../wrappers/calculate_score_tracks/env.yaml"
 #     script: "../wrappers/calculate_score_tracks/script.py"
-    
+
 
 def annotate_peaks_inputs(wc):
   suffix = ".pseudo_reps"
   if wc.name.endswith(suffix):
-    samples = [i for i in wc.name[:-len(suffix)].split('_VS_') if i != 'no_control']
+    # this branch is meant for peak calling using pseudo replicates (i.e., MACS)
+    samples = wc.name[:-len(suffix)].split('_VS_')
   else:
-    samples = [i for i in wc.name.split('_VS_') if i != 'no_control']
+    # this branch is menat for peak calling using true replicates
     if not '_VS_' in wc.name:
-      samples = sample_tab.loc[sample_tab['condition'] == wc.name, "control"].unique()
-      samples = [*samples, *sample_tab.loc[sample_tab['condition'] == wc.name, "name"].unique()]
+      # this branch is meant for multi-replicate peak calling (e.g., MSPC, MACS)
+      samples = [*sample_tab.loc[sample_tab['condition'] == wc.name, "name"].unique(),
+                 *sample_tab.loc[sample_tab['condition'] == wc.name, "control"].unique()]
+    else:
+      # this branch is meant for single-replicate peak calling (e.g., SEACR, MACS)
+      samples = wc.name.split('_VS_')
+  samples = [i for i in samples if i != "no_control"]
   inputs = {
     'bed': f"results/{wc.tool}_peaks/{wc.name}/{wc.name}.{wc.dups}.peaks.all.narrowPeak",
-    'gtf': expand(reference_directory+"/annot/{ref}.gtf", ref=config['reference'])[0],
-    'fa' : expand(reference_directory+"/seq/{ref}.fa", ref=config['reference'])[0],
+    'gtf': config["organism_gtf"],
+    'fa' : config["organism_fasta"],
     'tagdir': expand("results/HOMER_tag_dirs/{sample}.{dups}", sample=samples, dups=wc.dups)
   }
   return inputs
@@ -834,17 +759,18 @@ rule annotate_peaks:
     resources: mem = 5
     params: rscript = workflow.basedir+"/wrappers/annotate_peaks/plots_and_stats.R",
             fdr_cutof = config["macs_padj_filter"],
+            broad_peaks = config["macs_broad_peaks"],
             best = config["top_peaks"],
             tmpd = GLOBAL_TMPD_PATH,
     conda:  "../wrappers/annotate_peaks/env.yaml"
     script: "../wrappers/annotate_peaks/script.py"
-    
+
 
 def create_tag_dir_by_HOMER_input(wc):
     sample_names = sample_tab.loc[sample_tab['name'] == wc.name, "sample_name"].unique()
     inputs = {
       'bam': expand("mapped/{sn}.{d}.bam", sn=sample_names, d=wc.dups),
-      'fa' : expand(reference_directory+"/seq/{ref}.fa", ref=config['reference'])[0],
+      'fa' : config["organism_fasta"]
     }
     return inputs
 
@@ -873,7 +799,7 @@ rule create_tag_dir_by_HOMER:
 #     log:    run = "logs/{cond}.{dups}/merge_replicates.log",
 #     conda:  "../wrappers/merge_replicates/env.yaml"
 #     script: "../wrappers/merge_replicates/script.py"
-    
+
 # https://github.com/ENCODE-DCC/chip-seq-pipeline2
 
 rule call_MSPC:
@@ -892,7 +818,7 @@ rule call_MSPC:
 
 
 def call_SEACR_inputs(wc):
-    inputs = {"ref": expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
+    inputs = {"ref": config["organism_chr_sizes"]}
     dups = wc.dups
     samples = wc.name.split('_VS_')
     # This case is for doing peak calling on true replicates
@@ -902,7 +828,7 @@ def call_SEACR_inputs(wc):
       if samples[1] != 'no_control':
         inputs['ctl'] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)[0]
     else:
-      # This case is for using all reps of one condition to call MACS (with or without control)
+      # This case is for using all reps of one condition to call SEACR (with or without control)
       print("ERROR: SEACR cannot process multi-replicate files!")
       #inputs["trt"] = expand("mapped/{sample}.{dups}.bedgraph", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
       #controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
@@ -927,34 +853,34 @@ rule call_SEACR:
             temp = GLOBAL_TMPD_PATH,
     conda:  "../wrappers/call_SEACR/env.yaml"
     script: "../wrappers/call_SEACR/script.py"
-    
+
 
 def call_macs2_inputs(wc):
-    inputs = {"ref": expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0]}
+    inputs = {'ref': config["organism_chr_sizes"]}
     dups = wc.dups
     samples = wc.name.split('_VS_')
     suffix = '.pseudo_reps'
     if wc.name.endswith(suffix):
       # This case is for doing peak calling on specific pseudo replicates (with or without control)
       samples[1] = samples[1][:-len(suffix)]
-      name = sample_tab.loc[sample_tab.name == samples[0], ["condition","tag"]]
+      name = sample_tab.loc[sample_tab.name == samples[0], ["condition", "tag"]]
       inputs["trt"] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
       if samples[1] != 'no_control':
-        name = sample_tab.loc[sample_tab.name == samples[1], ["condition","tag"]]
+        name = sample_tab.loc[sample_tab.name == samples[1], ["condition", "tag", "sample_name"]]
         if len(name["tag"].unique()) == 1:
-          # This case is for having only one repllicate of DNA innput sample
+          # This case is for having only one replicate of the DNA input sample
           if name['tag'].unique() == "":
-            # Here, DNA input sample doesn't use any tag (e.g. Replicate column is empty)
-            inputs['ctl'] = expand("mapped/{cond}.{dups}.bam", cond=name['condition'].unique(), dups=dups)
+            # Here, the DNA input sample doesn't use any tag (e.g., Replicate column is empty)
+            inputs['ctl'] = expand("mapped/{cond}.{dups}.bam", cond=name['sample_name'].unique(), dups=dups)
           else:
-            # Here, DNA input sample does use a tag (e.g., Replicate column is rep1)
-            inputs['ctl'] = expand("mapped/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
+            # Here, the DNA input sample does use a tag (e.g., Replicate column is rep1)
+            inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
         else:
           inputs['ctl'] = expand("mapped/pseudo/{cond}_{rep}.{dups}.bam", cond=name['condition'].unique(), rep=name['tag'].unique(), dups=dups)
     else:
       # This case is for doing peak calling on true replicates
       if len(samples) == 2:
-        # This case is for using specific replicate to call MACS (with or without control)
+        # This case is for using a specific replicate to call MACS (with or without control)
         inputs["trt"] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
         if samples[1] != 'no_control':
           inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
@@ -965,10 +891,22 @@ def call_macs2_inputs(wc):
         controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
         if any(controls):
           inputs['ctl'] = expand("mapped/{sample}.{dups}.bam", sample=controls, dups=dups)
+      if config['spikein']:
+        if len(samples) == 2:
+          # This case is for using a specific replicate to call MACS (with or without control)
+          inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[0], "sample_name"].unique(), dups=dups)
+          if samples[1] != 'no_control':
+            inputs['ctl_spike'] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.name == samples[1], 'sample_name'].unique(), dups=dups)
+        else:
+          # This case is for using all reps of one condition to call MACS (with or without control)
+          inputs["trt_spike"] = expand("mapped/{sample}.{dups}.spike.bam", sample=sample_tab.loc[sample_tab.condition == samples[0], "sample_name"].unique(), dups=dups)
+          controls = sample_tab.loc[sample_tab.condition == samples[0], "control"].unique()
+          controls = sample_tab.loc[[i in controls for i in sample_tab.name], "sample_name"].unique()
+          if any(controls):
+            inputs['ctl_spike'] = expand("mapped/{sample}.{dups}.spike.bam", sample=controls, dups=dups)
     return inputs
-        
+
 #TODO: zakomponovat pouziti faCounts skriptu na vypocitani effective genome size (cize pocet baz (ACGT) minus pocet N)
-#TODO: zakomponovat pouziti broad_peaks nasavenia
 rule call_macs2:
     input:  unpack(call_macs2_inputs),
     output: trt_bdg = "results/MACS_peaks/{name}/{name}.{dups}.bdg",
@@ -989,32 +927,51 @@ rule call_macs2:
             xls_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.xls",
             sum_tab = "results/MACS_peaks/{name}/{name}.{dups}_summits.bed",
             nar_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.narrowPeak",
+            brd_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.broadPeak",
+            gap_tab = "results/MACS_peaks/{name}/{name}.{dups}_peaks.gappedPeak",
             effective_GS = config["effective_genome_size"],
             frag_len = config["fragment_length"],
             qval_cutof = config["macs_padj_filter"],
-            broad = config["macs_broad_peaks"], # TODO: doriesit
+            broad = config["macs_broad_peaks"],
             brcut = config["macs_broad_cutof"],
             dir = "results/MACS_peaks/{name}/",
             name= "{name}.{dups}",
             temp= GLOBAL_TMPD_PATH,
+            spikein = config['spikein'],
+            scalefac = config['spike_scale_factor'],
+            prefix = "results/MACS_peaks/{name}/{name}.{dups}",
+            bed = "results/MACS_peaks/{name}/{name}.{dups}.tmp.bed",
     conda:  "../wrappers/call_macs2/env.yaml"
     script: "../wrappers/call_macs2/script.py"
-    
+
 ##########################################
 # PREPARE INPUT
 #
+def convert_bam_to_bedgraph_inputs(wcs):
+    inputs = {'ref': config["organism_chr_sizes"]}
+    inputs['bam'] = f"mapped/{wcs.sample}.{wcs.dups}.bam"
+    if config['spikein']:
+      inputs['sbam'] = f"mapped/{wcs.sample}.{wcs.dups}.spike.bam"
+    return inputs
 
 rule convert_bam_to_bedgraph:
-    input:  bam = "{file_name}.bam",
-            ref = expand(reference_directory+"/seq/{ref}.chrom.sizes", ref=config['reference'])[0],
-    output: bdg = "{file_name}.bedgraph",
-    log:    "logs/{file_name}.bam2bedgraph.log",
+    input:  unpack(convert_bam_to_bedgraph_inputs)
+    output: bdg = "mapped/{sample}.{dups}.bedgraph",
+    log:    "logs/{sample}.{dups}.bam2bedgraph.log",
     threads: 2
-    params: max_frag_len = "1000",
-            temp= GLOBAL_TMPD_PATH,
+    params: temp= GLOBAL_TMPD_PATH,
+            spikein = config['spikein'],
+            scalefac = config['spike_scale_factor'],
     conda:  "../wrappers/convert_bam_to_bedgraph/env.yaml"
     script: "../wrappers/convert_bam_to_bedgraph/script.py"
 
+
+#rule index_bam:
+#    input:  "mapped/{file}.bam",
+#    output: "mapped/{file}.bam.bai",
+#    conda:  "../wrappers/call_macs2/env.yaml"
+#    shell: "samtools index {input}"
+    
 
 rule prepare_pseudo_reps:
     input:  bam = lambda wc: expand("mapped/{sample}.{{dups}}.bam", sample=sample_tab.loc[sample_tab.condition==wc.cond, 'sample_name'].unique())
@@ -1033,4 +990,22 @@ rule prepare_pseudo_reps:
     conda:  "../wrappers/prepare_pseudo_reps/env.yaml"
     script: "../wrappers/prepare_pseudo_reps/script.py"
 
-    
+
+rule filter_bam:
+    input:  bam = "mapped/{sample}{extra}.bam",
+            bed = "mapped/filter_regions.bed",
+    output: bam = "mapped/{sample}.{dups}{extra}.bam",
+            bai = "mapped/{sample}.{dups}{extra}.bam.bai",
+    log:    "logs/{sample}/filter_bam.{dups}{extra}.log"
+    threads: 5
+    params: prefix = "mapped/{sample}{extra}",
+            bam_fail = "mapped/{sample}.{dups}{extra}.filt_out.bam",
+            keep_dups = config['keep_duplicates'],
+            min_tlen = config['min_tlen'],
+            max_tlen = config['max_tlen'],
+            min_mapq = config['min_mapq'],
+            is_ctrl = lambda wc: sample_tab.loc[sample_tab.sample_name==wc.sample, 'is_control'].unique()[0],
+            is_spike= lambda wc: "spike" in wc.extra,
+            tmpd = GLOBAL_TMPD_PATH,
+    conda:  "../wrappers/filter_bam/env.yaml"
+    script:  "../wrappers/filter_bam/script.py"

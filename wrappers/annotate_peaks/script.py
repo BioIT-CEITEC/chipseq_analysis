@@ -20,7 +20,22 @@ f = open(snakemake.log.run, 'at')
 f.write("## CONDA:\n"+version+"\n")
 f.close()
 
-if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) > 0:
+dtypes = {
+  "chr": 'str',
+  "start": 'int',
+  "end": 'int',
+  "peak_id": 'str',
+  "score": 'float',
+  "strand": 'str',
+  "signal": 'float',
+  "pvalue": 'float',
+  "qvalue": 'float',
+  "summit": 'int',
+  "summit_cov": 'float',
+  "summit_pos": 'str'
+}
+
+if os.path.isfile(snakemake.input.bed) and sum(1 for line in open(snakemake.input.bed, 'r') if not (line.startswith('track') or line.startswith('#'))) > 0:
     command = "TMP=TMPDIR=TEMP="+snakemake.params.tmpd+" $(which time) annotatePeaks.pl"+\
               " "+snakemake.input.bed+\
               " "+snakemake.input.fa+\
@@ -33,20 +48,25 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
     f.write("## COMMAND: "+command+"\n")
     f.close()
     shell(command)
-    
+
     with open(snakemake.log.run, 'at') as f:
         f.write("## NOTE: merging "+snakemake.output.tsv+" with "+snakemake.input.bed+"\n")
     if snakemake.wildcards.tool == "SEACR":
-      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","summit_cov","summit_pos"])
+      # peaks come from SEACR
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","summit_cov","summit_pos"], dtype=dtypes, skiprows=sum(1 for line in open(snakemake.input.bed, 'r') if line.startswith('track')))
+    elif snakemake.params.broad_peaks:
+      # peaks come from MACS2 (broad peaks)
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue"], dtype=dtypes, skiprows=sum(1 for line in open(snakemake.input.bed, 'r') if line.startswith('track')))
     else:
-      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue","summit"])
+      # peaks come from MACS2 (narrow peaks)
+      orig = pandas.read_csv(snakemake.input.bed, sep="\t", header=None, names=["chr","start","end","peak_id","score","strand","signal","pvalue","qvalue","summit"], dtype=dtypes, skiprows=sum(1 for line in open(snakemake.input.bed, 'r') if line.startswith('track')))
     new = pandas.read_csv(snakemake.output.tsv, sep="\t", header=0)
     new.rename(columns={new.columns[0]:"peak_id"}, inplace=True)
     new.rename(columns=lambda s:s.replace(" ","_"), inplace=True)
     out = pandas.merge(orig, new, on=["peak_id"])
     out.drop(columns=['Chr','Start','End','Strand','Peak_Score'], inplace=True)
     out.to_csv(snakemake.output.tsv, sep="\t", header=True, index=False)
-    
+
     if snakemake.wildcards.tool == "MACS":
       command = "$(which time) Rscript "+snakemake.params.rscript+\
                 " "+snakemake.output.tsv+\
@@ -57,11 +77,11 @@ if os.path.isfile(snakemake.input.bed) and os.path.getsize(snakemake.input.bed) 
       f.write("## COMMAND: "+command+"\n")
       f.close()
       shell(command)
-    
+
 else:
     with open(snakemake.log.run, 'at') as f:
         f.write("## NOTE: "+snakemake.input.bed+" is empty\n")
-  
+
     command = "touch "+" ".join(snakemake.output)+" >> "+snakemake.log.run+" 2>&1"
     f = open(snakemake.log.run, 'at')
     f.write("## COMMAND: "+command+"\n")
