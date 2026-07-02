@@ -24,9 +24,9 @@ bad_tags = 2828 # read_unmapped + mate_unmapped + not_primary_alignment + read_f
 if not snakemake.params.keep_dups:
   bad_tags += 1024 # read_is_PCR_or_optical_duplicate
 
-# use tlen filter only for IP treated samples
+# use tlen filter for all IP treated samples and some control samples iff it's CnR analysis and input for SEACR
 tlen_filter = ""
-if not snakemake.params.is_ctrl and not snakemake.params.is_spike:
+if (not snakemake.params.is_ctrl or snakemake.wildcards.extra == '.cnr') and not snakemake.params.is_spike:
   tlen_filter = " -e '(!flag.paired && qlen-sclen-hclen <= "+str(snakemake.params.max_tlen)+" && qlen-sclen-hclen >= "+str(snakemake.params.min_tlen)+\
                 ") || (flag.paired && tlen != 0 && ((tlen <= "+str(snakemake.params.max_tlen)+" && tlen >= "+str(snakemake.params.min_tlen)+\
                 ") || (tlen >= -"+str(snakemake.params.max_tlen)+" && tlen <= -"+str(snakemake.params.min_tlen)+")))'"

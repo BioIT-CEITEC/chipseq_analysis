@@ -101,15 +101,15 @@
         }
       },
       "keep_duplicates": {
-        "label": "Keep all duplicates (reads filter)",
-        "info": "In ChIP-seq analysis, it is recommended to remove all duplicates (because of the randomness in fragmentation during library preparation) while in Cut&Run analysis it's not necessary (depending on the library size and targeted region).",
+        "label": "Keep PCR duplicates (reads filter)",
+        "info": "In ChIP-seq analysis, it is recommended to remove all duplicates (because of the randomness in fragmentation during library preparation) while in Cut&Run analysis it's not necessary (depending on the UMIs usage, the library size and targeted region). If using UMIs, it's highly recommended to remove duplicated reads.",
         "type": "bool",
         "default": false,
         "conditions": {
           "value": {
             "protocol": {
               "chipseq": false,
-              "car": true
+              "car": false
             }
           }
         }

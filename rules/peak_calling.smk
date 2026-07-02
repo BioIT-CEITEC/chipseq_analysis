@@ -949,7 +949,10 @@ rule call_macs2:
 #
 def convert_bam_to_bedgraph_inputs(wcs):
     inputs = {'ref': config["organism_chr_sizes"]}
-    inputs['bam'] = f"mapped/{wcs.sample}.{wcs.dups}.bam"
+    if wcs.sample in sample_tab.loc[sample_tab.is_control==True, 'sample_name'].unique():
+      inputs['bam'] = f"mapped/{wcs.sample}.{wcs.dups}.cnr.bam"
+    else:
+      inputs['bam'] = f"mapped/{wcs.sample}.{wcs.dups}.bam"
     if config['spikein']:
       inputs['sbam'] = f"mapped/{wcs.sample}.{wcs.dups}.spike.bam"
     return inputs
@@ -991,9 +994,19 @@ rule prepare_pseudo_reps:
     script: "../wrappers/prepare_pseudo_reps/script.py"
 
 
+def filter_bam_inputs(wcs):
+    inputs = {'bed': "mapped/filter_regions.bed"}
+    # wcs.extra could be only '.spike', '.cnr' and empty string
+    if '.cnr' == wcs.extra:
+      inputs['bam'] = f'mapped/{wcs.sample}.bam'
+    else:
+      inputs['bam'] = f'mapped/{wcs.sample}{wcs.extra}.bam'
+    return inputs
+
 rule filter_bam:
-    input:  bam = "mapped/{sample}{extra}.bam",
-            bed = "mapped/filter_regions.bed",
+    input:  unpack(filter_bam_inputs),
+#    input:  bam = "mapped/{sample}{extra}.bam",
+#            bed = "mapped/filter_regions.bed",
     output: bam = "mapped/{sample}.{dups}{extra}.bam",
             bai = "mapped/{sample}.{dups}{extra}.bam.bai",
     log:    "logs/{sample}/filter_bam.{dups}{extra}.log"
